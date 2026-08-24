@@ -1,0 +1,32 @@
+[project]
+name = "gobs"
+version = "0.1.0"
+description = "Launch an AI CLI against your own Obsidian vault."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "wisdom-km" }]
+keywords = ["obsidian", "cli", "grok", "mcp", "knowledge-base"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Environment :: Console",
+  "Programming Language :: Python :: 3",
+  "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/wisdom-km/gobs"
+Issues = "https://github.com/wisdom-km/gobs/issues"
+
+[project.scripts]
+gobs = "gobs.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+gobs = ["templates/*.md"]
