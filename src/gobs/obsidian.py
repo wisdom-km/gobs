@@ -29,14 +29,38 @@ def vault_uri(vault: Path) -> str:
     return "obsidian://open?path=" + quote(posix, safe=":")
 
 
+_DETACHED_WIN = 0x00000008 | 0x00000200 | 0x08000000  # DETACHED | NEW_GROUP | NO_WINDOW
+
+
+def _popen_detached(argv: list[str]) -> None:
+    kwargs: dict = {
+        "stdin": subprocess.DEVNULL,
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+    }
+    if sys.platform == "win32":
+        kwargs["creationflags"] = _DETACHED_WIN
+        kwargs["close_fds"] = False
+    else:
+        kwargs["start_new_session"] = True
+        kwargs["close_fds"] = True
+    subprocess.Popen(argv, **kwargs)
+
+
 def _open_uri(uri: str) -> bool:
+    """Open an obsidian:// URI without attaching Obsidian to this console."""
     try:
         if sys.platform == "win32":
-            os.startfile(uri)  # type: ignore[attr-defined]
+            exe = find_obsidian_executable()
+            if exe is not None:
+                _popen_detached([str(exe), uri])
+                return True
+            # `start` detaches; os.startfile inherits the console and dumps installer logs.
+            _popen_detached(["cmd", "/c", "start", "", uri])
             return True
         opener = "open" if sys.platform == "darwin" else "xdg-open"
         if shutil.which(opener):
-            subprocess.Popen([opener, uri], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            _popen_detached([opener, uri])
             return True
     except OSError:
         return False
@@ -98,9 +122,9 @@ def open_vault(vault: Path) -> str:
             "Could not open Obsidian. Install it, or start the vault yourself, then retry."
         )
     if sys.platform == "darwin" and exe.suffix == ".app":
-        subprocess.Popen(["open", "-a", str(exe), str(vault)])
+        _popen_detached(["open", "-a", str(exe), str(vault)])
         return f"open -a {exe}"
-    subprocess.Popen([str(exe), str(vault)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    _popen_detached([str(exe), uri])
     return f"exe {exe}"
 
 

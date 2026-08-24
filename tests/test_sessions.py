@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from gobs.launch import should_prompt_sessions  # noqa: E402
 from gobs.sessions import encode_cwd, pick_session  # noqa: E402
 
 
@@ -16,6 +17,35 @@ class SessionTests(unittest.TestCase):
         self.assertNotIn(":", encoded)
         self.assertNotIn("\\", encoded)
         self.assertTrue(encoded)
+
+    def test_skip_picker_when_no_sessions(self) -> None:
+        self.assertFalse(
+            should_prompt_sessions(
+                rows=[],
+                resume_id=None,
+                new_session=False,
+                extra=None,
+                interactive=True,
+            )
+        )
+        self.assertTrue(
+            should_prompt_sessions(
+                rows=[{"id": "aaa", "title": "One"}],
+                resume_id=None,
+                new_session=False,
+                extra=None,
+                interactive=True,
+            )
+        )
+        self.assertFalse(
+            should_prompt_sessions(
+                rows=[{"id": "aaa", "title": "One"}],
+                resume_id=None,
+                new_session=True,
+                extra=None,
+                interactive=True,
+            )
+        )
 
     def test_picker_new_and_index(self) -> None:
         rows = [{"id": "aaa", "title": "One", "recap": ""}]

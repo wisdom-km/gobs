@@ -37,6 +37,22 @@ def _resume_already(extra: list[str] | None) -> bool:
     return any(a in flags or a.startswith("--resume=") for a in args)
 
 
+def should_prompt_sessions(
+    *,
+    rows: list,
+    resume_id: str | None,
+    new_session: bool,
+    extra: list[str] | None,
+    interactive: bool,
+) -> bool:
+    """Picker only when there is something to resume. Empty vault → go talk."""
+    if resume_id or new_session or _resume_already(extra):
+        return False
+    if not interactive:
+        return False
+    return bool(rows)
+
+
 def launch(
     vault: Path | None = None,
     *,
@@ -61,6 +77,19 @@ def launch(
     print(f"gobs: vault {vault_path}")
     print(f"gobs: cli   {cli_name}")
 
+    extra = list(extra_args or [])
+    picked: str | None = resume_id
+    rows = listed_gobs_sessions(vault_path) if cli_name == "grok" else []
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    if cli_name == "grok" and should_prompt_sessions(
+        rows=rows,
+        resume_id=resume_id,
+        new_session=new_session,
+        extra=extra,
+        interactive=interactive,
+    ):
+        picked = pick_session(rows)
+
     if should_open:
         try:
             how = open_vault(vault_path)
@@ -78,19 +107,6 @@ def launch(
                 file=sys.stderr,
             )
 
-    extra = list(extra_args or [])
-    picked: str | None = resume_id
-    if (
-        picked is None
-        and not new_session
-        and not _resume_already(extra)
-        and cli_name == "grok"
-        and sys.stdin.isatty()
-        and sys.stdout.isatty()
-    ):
-        rows = listed_gobs_sessions(vault_path)
-        picked = pick_session(rows)
-
     command = _cli_command(cli_name)
     env = os.environ.copy()
     env["GOBS"] = "1"
@@ -102,6 +118,10 @@ def launch(
     if extra:
         argv.extend(extra)
 
+    if picked:
+        print(f"gobs: resume {picked}")
+    else:
+        print("gobs: new session — starting grok")
     print(f"gobs: exec  {' '.join(argv)}")
     before = snapshot(vault_path) if cli_name == "grok" else {}
     if wait:

@@ -29,7 +29,7 @@ You also need Obsidian, the [Local REST API](https://github.com/coddingtonbear/o
 ## Commands
 
 ```text
-gobs                 # open Obsidian, wait for MCP, pick a gobs session, start grok
+gobs                 # open Obsidian (detached), start grok; picker only if prior gobs sessions exist
 gobs --new           # skip the picker, start a new session
 gobs --resume ID     # resume a tagged session
 gobs init            # conventions + /save-to-vault skill; does not rewrite your folders
