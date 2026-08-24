@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -17,16 +18,13 @@ from gobs.constants import DEFAULT_MCP_URL, DEFAULT_REST_URL
 WINDOWS_EXE_CANDIDATES = (
     Path(os.environ.get("LOCALAPPDATA", "")) / "Obsidian" / "Obsidian.exe",
     Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "obsidian" / "Obsidian.exe",
-    Path(r"G:\BaseWare\Obsidian\Obsidian.exe"),
     Path(r"C:\Program Files\Obsidian\Obsidian.exe"),
 )
 
 
 def vault_uri(vault: Path) -> str:
-    # Obsidian wants an encoded absolute path; slashes as %2F work on all OSes.
     posix = vault.resolve().as_posix()
     if sys.platform == "win32" and len(posix) >= 2 and posix[1] == ":":
-        # D:/Notes/Vault → D:%2FNotes%2FVault
         posix = posix[0] + ":" + posix[2:]
     return "obsidian://open?path=" + quote(posix, safe=":")
 
@@ -45,6 +43,32 @@ def _open_uri(uri: str) -> bool:
     return False
 
 
+def _obsidian_from_windows_registry() -> Path | None:
+    if sys.platform != "win32":
+        return None
+    try:
+        import winreg
+    except ImportError:
+        return None
+    for root, path in (
+        (winreg.HKEY_CURRENT_USER, r"Software\Classes\obsidian\shell\open\command"),
+        (winreg.HKEY_LOCAL_MACHINE, r"Software\Classes\obsidian\shell\open\command"),
+    ):
+        try:
+            with winreg.OpenKey(root, path) as key:
+                val, _ = winreg.QueryValueEx(key, None)
+        except OSError:
+            continue
+        match = re.search(r'"([^"]*Obsidian\.exe)"', str(val), re.I)
+        if not match:
+            match = re.search(r"(\S*Obsidian\.exe)", str(val), re.I)
+        if match:
+            exe = Path(match.group(1))
+            if exe.is_file():
+                return exe
+    return None
+
+
 def find_obsidian_executable() -> Path | None:
     which = shutil.which("obsidian") or shutil.which("Obsidian")
     if which:
@@ -53,6 +77,9 @@ def find_obsidian_executable() -> Path | None:
         app = Path("/Applications/Obsidian.app")
         if app.exists():
             return app
+    found = _obsidian_from_windows_registry()
+    if found:
+        return found
     for candidate in WINDOWS_EXE_CANDIDATES:
         if candidate.is_file():
             return candidate
@@ -84,7 +111,6 @@ def endpoint_up(url: str, timeout: float = 1.5) -> bool:
             resp.read(64)
         return True
     except urllib.error.HTTPError:
-        # Server spoke HTTP (401/404 still means Obsidian is up).
         return True
     except (urllib.error.URLError, TimeoutError, OSError):
         return False
@@ -96,10 +122,6 @@ def wait_for_mcp(
     timeout: float = 30,
     rest_url: str = DEFAULT_REST_URL,
 ) -> tuple[bool, str]:
-    """Poll Local REST API / MCP until something answers.
-
-    Returns (ok, which_url).
-    """
     deadline = time.monotonic() + timeout
     urls = []
     for u in (mcp_url, rest_url):

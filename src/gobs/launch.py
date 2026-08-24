@@ -10,6 +10,7 @@ from pathlib import Path
 
 from gobs.config import GobsConfig, load_user_config, load_vault_config, resolve_vault
 from gobs.obsidian import open_vault, wait_for_mcp
+from gobs.sessions import listed_gobs_sessions, new_or_updated, pick_session, snapshot, tag_session
 
 
 class LaunchError(RuntimeError):
@@ -30,6 +31,12 @@ def _cli_command(name: str) -> str:
     )
 
 
+def _resume_already(extra: list[str] | None) -> bool:
+    args = extra or []
+    flags = {"--resume", "-r", "--continue", "-c"}
+    return any(a in flags or a.startswith("--resume=") for a in args)
+
+
 def launch(
     vault: Path | None = None,
     *,
@@ -37,9 +44,11 @@ def launch(
     open_obsidian: bool | None = None,
     extra_args: list[str] | None = None,
     wait: bool = True,
+    new_session: bool = False,
+    resume_id: str | None = None,
 ) -> int:
     cwd = Path.cwd()
-    vault_path = resolve_vault(vault, cwd=cwd) if vault is not None else resolve_vault(None, cwd=cwd)
+    vault_path = resolve_vault(vault, cwd=cwd)
     if not vault_path.exists():
         raise LaunchError(f"Vault does not exist: {vault_path}")
 
@@ -69,17 +78,41 @@ def launch(
                 file=sys.stderr,
             )
 
+    extra = list(extra_args or [])
+    picked: str | None = resume_id
+    if (
+        picked is None
+        and not new_session
+        and not _resume_already(extra)
+        and cli_name == "grok"
+        and sys.stdin.isatty()
+        and sys.stdout.isatty()
+    ):
+        rows = listed_gobs_sessions(vault_path)
+        picked = pick_session(rows)
+
     command = _cli_command(cli_name)
     env = os.environ.copy()
     env["GOBS"] = "1"
     env["GOBS_VAULT"] = str(vault_path)
     env["GOBS_CLI"] = cli_name
     argv = [command, "--cwd", str(vault_path)] if cli_name == "grok" else [command]
-    if extra_args:
-        argv.extend(extra_args)
+    if picked and cli_name == "grok":
+        argv.extend(["--resume", picked])
+    if extra:
+        argv.extend(extra)
 
     print(f"gobs: exec  {' '.join(argv)}")
+    before = snapshot(vault_path) if cli_name == "grok" else {}
     if wait:
-        return subprocess.call(argv, cwd=str(vault_path), env=env)
-    subprocess.Popen(argv, cwd=str(vault_path), env=env)
-    return 0
+        code = subprocess.call(argv, cwd=str(vault_path), env=env)
+    else:
+        subprocess.Popen(argv, cwd=str(vault_path), env=env)
+        return 0
+
+    if cli_name == "grok":
+        for sid in new_or_updated(vault_path, before):
+            tag_session(sid, vault_path)
+        if picked:
+            tag_session(picked, vault_path)
+    return code

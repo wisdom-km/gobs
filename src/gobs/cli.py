@@ -7,13 +7,15 @@ import sys
 from pathlib import Path
 
 from gobs import __version__
-from gobs.config import load_user_config, resolve_vault, write_user_config
+from gobs.config import load_user_config, write_user_config
 from gobs.doctor import doctor
 from gobs.init_cmd import init_vault
 from gobs.launch import LaunchError, launch
+from gobs.save import SaveError, save_note
+from gobs.sessions import listed_gobs_sessions
 
 
-COMMANDS = {"init", "config", "launch", "doctor"}
+COMMANDS = {"init", "config", "launch", "doctor", "save", "sessions"}
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -28,6 +30,8 @@ def _parser() -> argparse.ArgumentParser:
     launch_p.add_argument("vault", nargs="?", help="Vault path (default: configured vault)")
     launch_p.add_argument("--cli", help="CLI to spawn (default: grok)")
     launch_p.add_argument("--no-open", action="store_true", help="Do not start Obsidian")
+    launch_p.add_argument("--new", action="store_true", help="Skip the session picker and start new")
+    launch_p.add_argument("-r", "--resume", metavar="ID", help="Resume a gobs/Grok session id")
     launch_p.add_argument(
         "extra",
         nargs=argparse.REMAINDER,
@@ -59,6 +63,16 @@ def _parser() -> argparse.ArgumentParser:
 
     doc_p = sub.add_parser("doctor", help="Check vault, CLI, and Obsidian MCP")
     doc_p.add_argument("vault", nargs="?", help="Vault path")
+
+    save_p = sub.add_parser("save", help="Write a distilled note and optional transcript")
+    save_p.add_argument("--note", required=True, help="Vault-relative note path")
+    save_p.add_argument("--body-file", help="Distilled markdown (default: stdin)")
+    save_p.add_argument("--chat-file", help="Raw conversation; stored as a linked transcript")
+    save_p.add_argument("--title", help="Short title used in the transcript filename")
+    save_p.add_argument("--vault", help="Vault path (default: configured vault)")
+
+    sess_p = sub.add_parser("sessions", help="List gobs-tagged sessions for the vault")
+    sess_p.add_argument("vault", nargs="?", help="Vault path")
     return p
 
 
@@ -69,7 +83,6 @@ def _normalize_argv(argv: list[str] | None) -> list[str]:
     head = args[0]
     if head in COMMANDS or head in {"-h", "--help", "-V", "--version"}:
         return args
-    # `gobs --cli grok` or `gobs C:\\Notes\\Vault`
     return ["launch", *args]
 
 
@@ -100,6 +113,43 @@ def _cmd_config(key: str | None, value: str | None) -> int:
     return 0
 
 
+def _read_text(path: Path | None) -> str:
+    if path is None:
+        return sys.stdin.read()
+    return path.read_text(encoding="utf-8")
+
+
+def _cmd_save(ns: argparse.Namespace) -> int:
+    body = _read_text(Path(ns.body_file) if ns.body_file else None)
+    chat = Path(ns.chat_file).read_text(encoding="utf-8") if ns.chat_file else None
+    result = save_note(
+        note=ns.note,
+        body=body,
+        chat=chat,
+        vault=Path(ns.vault) if ns.vault else None,
+        title=ns.title,
+    )
+    print(f"gobs: wrote {result.note}")
+    if result.transcript:
+        print(f"gobs: transcript {result.transcript} ({result.cites} paragraph links)")
+    return 0
+
+
+def _cmd_sessions(vault: Path | None) -> int:
+    from gobs.config import resolve_vault
+
+    vault_path = resolve_vault(vault, cwd=Path.cwd())
+    rows = listed_gobs_sessions(vault_path)
+    if not rows:
+        print("no gobs sessions tagged for this vault yet")
+        return 0
+    for row in rows:
+        recap = (row.get("recap") or "").replace("\n", " ").strip()
+        extra = f"  {recap[:60]}" if recap else ""
+        print(f"{row['id']}  {row['title']}{extra}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _parser()
     ns = parser.parse_args(_normalize_argv(argv))
@@ -123,6 +173,10 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_config(ns.key, ns.value)
         if ns.command == "doctor":
             return doctor(Path(ns.vault) if ns.vault else None)
+        if ns.command == "save":
+            return _cmd_save(ns)
+        if ns.command == "sessions":
+            return _cmd_sessions(Path(ns.vault) if ns.vault else None)
         extra = list(ns.extra or [])
         if extra and extra[0] == "--":
             extra = extra[1:]
@@ -131,7 +185,9 @@ def main(argv: list[str] | None = None) -> int:
             cli=ns.cli,
             open_obsidian=False if ns.no_open else None,
             extra_args=extra or None,
+            new_session=ns.new,
+            resume_id=ns.resume,
         )
-    except (LaunchError, FileNotFoundError) as exc:
+    except (LaunchError, FileNotFoundError, SaveError) as exc:
         print(f"gobs: {exc}", file=sys.stderr)
         return 1

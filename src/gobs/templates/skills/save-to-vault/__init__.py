@@ -1,0 +1,1 @@
+# save-to-vault skill template.

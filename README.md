@@ -2,46 +2,46 @@
 
 **gobs** launches an AI CLI against **your own [Obsidian](https://obsidian.md) vault**.
 
-The human reads. The model writes and files — and only when you ask it to save.
+The human reads. The model writes and files — **only when you ask**, and through `gobs save`, not by dumping the chat into a note.
 
-v1 is a **launcher**, not a new chat UI. The default CLI is [Grok](https://github.com/xai-org/grok). Other CLIs can use the same vault files; see [docs/other-clis.md](docs/other-clis.md).
-
-## What it does
-
-```text
-gobs              # open the vault in Obsidian, wait for MCP, start grok there
-gobs init         # add conventions to an existing vault (does not rewrite your folders)
-gobs init --skeleton   # optional 00_Inbox / 10_Projects / … layout for empty vaults
-gobs doctor       # check vault, grok, Obsidian
-```
-
-Sessions started from `gobs` use the vault as the working directory, so the CLI welcome / resume list is **that vault’s** conversations. A little coding inside a gobs session still counts as a gobs session.
+The default CLI is [Grok](https://github.com/xai-org/grok). Other CLIs can use the same vault files; see [docs/other-clis.md](docs/other-clis.md).
 
 ## Install
 
-Python 3.10+:
+Python 3.10+. One of:
 
 ```bash
+# pip
 pip install git+https://github.com/wisdom-km/gobs.git
+
+# uv
+uv tool install git+https://github.com/wisdom-km/gobs.git
+
+# Windows
+irm https://raw.githubusercontent.com/wisdom-km/gobs/main/install.ps1 | iex
+
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/wisdom-km/gobs/main/install.sh | bash
 ```
 
-From a clone:
+You also need Obsidian, the [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) community plugin (MCP at `http://127.0.0.1:27123/mcp/`), and `grok` on `PATH`. gobs does not copy API keys; `gobs doctor` tells you if Grok’s Obsidian MCP is missing.
 
-```bash
-pip install -e .
+## Commands
+
+```text
+gobs                 # open Obsidian, wait for MCP, pick a gobs session, start grok
+gobs --new           # skip the picker, start a new session
+gobs --resume ID     # resume a tagged session
+gobs init            # conventions + /save-to-vault skill; does not rewrite your folders
+gobs init --skeleton # optional 00_Inbox / 10_Projects / … layout for empty vaults
+gobs save --note PATH.md --body-file note.md [--chat-file chat.md]
+gobs sessions        # list gobs-tagged sessions
+gobs doctor          # vault, skill, plugin, Grok MCP, HTTP
 ```
 
-You also need:
-
-- [Obsidian](https://obsidian.md)
-- The [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) community plugin (MCP at `http://127.0.0.1:27123/` by default)
-- `grok` on `PATH` (or another CLI via `--cli`)
-
-Point Grok at the same MCP URL in `~/.grok/config.toml` — gobs does not copy API keys.
+Sessions launched from `gobs` are tagged. The next `gobs` lists **those** sessions (plus “new”). Coding a little inside a gobs session still counts.
 
 ## Quick start
-
-Existing vault (keeps your folders and `AGENTS.md`):
 
 ```bash
 gobs init "/path/to/your/vault"
@@ -49,65 +49,45 @@ gobs doctor
 gobs
 ```
 
-New / empty folder, with the optional skeleton:
+`gobs init` on an existing vault:
+
+- Does **not** replace your `AGENTS.md`. It upserts a marked `gobs:save-protocol` block.
+- Installs `.grok/skills/save-to-vault/SKILL.md` (slash command `/save-to-vault`).
+- Creates `99_Archive/transcripts/` if missing.
+
+`--force-agents` is the only way to overwrite `AGENTS.md`.
+
+## Saving
+
+Say **「写进库」**, **save to vault**, or run **`/save-to-vault`**.
+
+The skill must call `gobs save`. In the distilled note, mark a citation as `[pN]` to point at transcript paragraph N:
 
 ```bash
-gobs init ~/Notes/Vault --skeleton
+gobs save --note 30_Lessons/idea.md --body-file distilled.md --chat-file chat.md --title idea
 ```
 
-That creates, only if missing:
+`[p2]` becomes `[[99_Archive/transcripts/2026-08-25-idea#^gobs-20260825-2]]`.
 
-```text
-00_Inbox/   10_Projects/   20_Areas/   30_Lessons/
-40_Prompts/ 50_Resources/  90_Meta/    99_Archive/transcripts/
-README.md   AGENTS.md      .gobs/config.toml
-```
-
-Existing files are never overwritten unless you pass `--force-agents`.
-
-## Saving to the vault
-
-Nothing is written until you say so, for example:
-
-- “save to vault”
-- “write this down”
-- “save to vault including transcript”
-
-**Current notes** get a distilled page (conclusions, decisions, follow-ups).  
-**Full chat** (optional) goes under `99_Archive/transcripts/` and is not daily reading.  
-Key sentences in the distilled note should link to the **matching paragraph** in the transcript (`#^block-id`).
-
-Filing: if you use the skeleton, the model follows the table in `AGENTS.md`. If you already have a taxonomy, it follows **yours**. It files on its own when the path is obvious, and asks only when it is not.
+Raw chat never belongs in a current note. See [docs/saving.md](docs/saving.md).
 
 ## Config
 
-User defaults: `~/.gobs/config.toml`
+`~/.gobs/config.toml` (user) and `<vault>/.gobs/config.toml` (vault):
 
 ```toml
 vault = "/path/to/your/vault"
 cli = "grok"
 mcp_url = "http://127.0.0.1:27123/mcp/"
-open_obsidian = true
-mcp_timeout = 30
-transcripts = "99_Archive/transcripts"
 ```
-
-Per-vault overrides: `<vault>/.gobs/config.toml`
 
 ```bash
 gobs config vault /path/to/your/vault
-gobs --cli grok
-gobs --no-open          # skip launching Obsidian
-gobs -- --continue      # extra args go to the CLI (Grok: resume last session)
+gobs --no-open
+gobs -- --continue      # extra args after -- go to the CLI
 ```
 
-Environment set on the child process: `GOBS=1`, `GOBS_VAULT`, `GOBS_CLI`.
-
-## What gobs is not
-
-- Not a new TUI (later).
-- Not a binder to one vendor’s model.
-- Not your private vault rules. Put calendar IDs, language, “don’t touch this folder” in **your** `AGENTS.md`. The template only encodes: *human reads, AI writes, save on request, distilled notes plus optional paragraph-linked transcripts*.
+Child env: `GOBS=1`, `GOBS_VAULT`, `GOBS_CLI`.
 
 ## License
 

@@ -25,6 +25,9 @@ SKELETON_DIRS = (
 )
 
 DEFAULT_TRANSCRIPTS = "99_Archive/transcripts"
+SAVE_SKILL_NAME = "save-to-vault"
+PROTOCOL_BEGIN = "<!-- gobs:save-protocol -->"
+PROTOCOL_END = "<!-- /gobs:save-protocol -->"
 
 
 def user_config_path() -> Path:
@@ -33,3 +36,7 @@ def user_config_path() -> Path:
 
 def vault_config_path(vault: Path) -> Path:
     return vault / APP_DIRNAME / VAULT_CONFIG_NAME
+
+
+def user_sessions_path() -> Path:
+    return Path.home() / APP_DIRNAME / "sessions.json"

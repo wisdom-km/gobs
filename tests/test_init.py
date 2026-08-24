@@ -26,8 +26,11 @@ class InitTests(unittest.TestCase):
             (vault / "AGENTS.md").write_text("keep me", encoding="utf-8")
             with patch("gobs.config.user_config_path", self._home(tmp)):
                 actions = init_vault(vault, skeleton=False, set_default=True)
-            self.assertEqual(actions["AGENTS.md"], "skipped")
-            self.assertEqual((vault / "AGENTS.md").read_text(encoding="utf-8"), "keep me")
+            self.assertEqual(actions["AGENTS.md"], "updated")
+            text = (vault / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertTrue(text.startswith("keep me"))
+            self.assertIn("gobs:save-protocol", text)
+            self.assertIn("gobs save", text)
             self.assertTrue((vault / ".gobs" / "config.toml").is_file())
             self.assertTrue((vault / ".obsidian").is_dir())
 
@@ -46,7 +49,11 @@ class InitTests(unittest.TestCase):
             self.assertTrue((vault / "AGENTS.md").is_file())
             text = (vault / "AGENTS.md").read_text(encoding="utf-8")
             self.assertIn("scribe and archivist", text)
+            self.assertIn("gobs:save-protocol", text)
             self.assertNotIn("孔明", text)
+            skill = vault / ".grok" / "skills" / "save-to-vault" / "SKILL.md"
+            self.assertTrue(skill.is_file())
+            self.assertIn("gobs save", skill.read_text(encoding="utf-8"))
 
     def test_force_agents_overwrites(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

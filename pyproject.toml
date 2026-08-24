@@ -1,6 +1,6 @@
 [project]
 name = "gobs"
-version = "0.1.0"
+version = "0.2.0"
 description = "Launch an AI CLI against your own Obsidian vault."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -29,4 +29,4 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-gobs = ["templates/*.md"]
+gobs = ["templates/*.md", "templates/skills/*/SKILL.md"]
