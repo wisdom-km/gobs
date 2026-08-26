@@ -13,6 +13,7 @@ from gobs.init_cmd import init_vault
 from gobs.launch import LaunchError, launch
 from gobs.learn import (
     LearnError,
+    bind_session,
     boot_prompt,
     create_domain,
     format_status,
@@ -21,7 +22,7 @@ from gobs.learn import (
     resolve_learn_vault,
 )
 from gobs.save import SaveError, save_note
-from gobs.sessions import listed_gobs_sessions
+from gobs.sessions import listed_gobs_sessions, new_or_updated, pick_session, snapshot
 
 
 COMMANDS = {"init", "config", "launch", "doctor", "save", "sessions", "learn"}
@@ -91,6 +92,17 @@ def _parser() -> argparse.ArgumentParser:
     start_p.add_argument("--cli", help="CLI to spawn")
     start_p.add_argument("--no-open", action="store_true")
     start_p.add_argument("--no-launch", action="store_true", help="Only create/print the card")
+    start_p.add_argument(
+        "--new",
+        action="store_true",
+        help="Force a new chat session (ignore card session_id and picker)",
+    )
+    start_p.add_argument(
+        "-r",
+        "--resume",
+        metavar="ID",
+        help="Resume this gobs/Grok session under learn mode",
+    )
     stat_p = learn_sub.add_parser("status", help="List domain cards in 15_Learn/")
     stat_p.add_argument("--vault", help="Vault path")
     return p
@@ -170,6 +182,35 @@ def _cmd_sessions(vault: Path | None) -> int:
     return 0
 
 
+def _pick_learn_session(
+    vault: Path,
+    *,
+    card_session: str,
+    resume_id: str | None,
+    force_new: bool,
+    cli_name: str,
+) -> tuple[str | None, bool]:
+    """Return (session_id_or_None, is_resume)."""
+    if force_new:
+        return None, False
+    if resume_id:
+        return resume_id, True
+    if card_session:
+        print(f"gobs learn: card bound to session {card_session}")
+        return card_session, True
+    if cli_name != "grok":
+        return None, False
+    rows = listed_gobs_sessions(vault)
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    if not interactive or not rows:
+        return None, False
+    print("gobs learn: pick a prior session to continue under coach mode, or n for new")
+    picked = pick_session(rows)
+    if picked:
+        return picked, True
+    return None, False
+
+
 def _cmd_learn(ns: argparse.Namespace) -> int:
     if ns.learn_cmd == "status":
         vault = resolve_learn_vault(Path(ns.vault) if ns.vault else None)
@@ -183,16 +224,46 @@ def _cmd_learn(ns: argparse.Namespace) -> int:
     print(f"gobs learn: {action:8} {rel}")
     card = parse_card(vault / rel, vault)
     title = card.title if card else ns.name
+    level = card.level if card else "L0"
+    card_session = (card.session_id if card else "") or ""
     if ns.no_launch:
         return 0
-    return launch(
+
+    from gobs.config import load_user_config, load_vault_config
+
+    user = load_user_config()
+    cfg = load_vault_config(vault, user)
+    cli_name = ns.cli or cfg.cli
+    resume_id, is_resume = _pick_learn_session(
+        vault,
+        card_session=card_session,
+        resume_id=ns.resume,
+        force_new=ns.new,
+        cli_name=cli_name,
+    )
+    if resume_id:
+        bind_session(vault, rel, resume_id)
+        print(f"gobs learn: bound session {resume_id} → {rel}")
+
+    before = snapshot(vault) if cli_name == "grok" else {}
+    code = launch(
         vault,
         cli=ns.cli,
         open_obsidian=False if ns.no_open else None,
-        new_session=True,
-        boot_prompt=boot_prompt(rel.as_posix(), title),
+        new_session=not is_resume,
+        resume_id=resume_id,
+        boot_prompt=boot_prompt(
+            rel.as_posix(), title, resume=is_resume, level=level
+        ),
         learn_note=rel.as_posix(),
     )
+    if cli_name == "grok":
+        for sid in new_or_updated(vault, before):
+            bind_session(vault, rel, sid)
+            print(f"gobs learn: bound session {sid} → {rel}")
+        if resume_id:
+            bind_session(vault, rel, resume_id)
+    return code
 
 
 def main(argv: list[str] | None = None) -> int:
