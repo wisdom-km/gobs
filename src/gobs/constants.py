@@ -12,9 +12,13 @@ DEFAULT_MCP_URL = "http://127.0.0.1:27123/mcp/"
 DEFAULT_REST_URL = "http://127.0.0.1:27123/"
 DEFAULT_MCP_TIMEOUT = 30
 
+LEARN_DIR = "15_Learn"
+LEARN_SKILL_NAME = "learn-domain"
+
 SKELETON_DIRS = (
     "00_Inbox",
     "10_Projects",
+    LEARN_DIR,
     "20_Areas",
     "30_Lessons",
     "40_Prompts",
@@ -28,6 +32,8 @@ DEFAULT_TRANSCRIPTS = "99_Archive/transcripts"
 SAVE_SKILL_NAME = "save-to-vault"
 PROTOCOL_BEGIN = "<!-- gobs:save-protocol -->"
 PROTOCOL_END = "<!-- /gobs:save-protocol -->"
+LEARN_PROTOCOL_BEGIN = "<!-- gobs:learn-protocol -->"
+LEARN_PROTOCOL_END = "<!-- /gobs:learn-protocol -->"
 
 
 def user_config_path() -> Path:
