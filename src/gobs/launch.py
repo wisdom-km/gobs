@@ -62,6 +62,8 @@ def launch(
     wait: bool = True,
     new_session: bool = False,
     resume_id: str | None = None,
+    boot_prompt: str | None = None,
+    learn_note: str | None = None,
 ) -> int:
     cwd = Path.cwd()
     vault_path = resolve_vault(vault, cwd=cwd)
@@ -112,14 +114,21 @@ def launch(
     env["GOBS"] = "1"
     env["GOBS_VAULT"] = str(vault_path)
     env["GOBS_CLI"] = cli_name
+    if learn_note:
+        env["GOBS_LEARN"] = "1"
+        env["GOBS_LEARN_NOTE"] = learn_note
     argv = [command, "--cwd", str(vault_path)] if cli_name == "grok" else [command]
     if picked and cli_name == "grok":
         argv.extend(["--resume", picked])
     if extra:
         argv.extend(extra)
+    if boot_prompt:
+        argv.append(boot_prompt)
 
     if picked:
         print(f"gobs: resume {picked}")
+    elif learn_note:
+        print(f"gobs: learn  {learn_note}")
     else:
         print("gobs: new session — starting grok")
     print(f"gobs: exec  {' '.join(argv)}")
