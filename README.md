@@ -8,7 +8,8 @@ You read. The model writes and files — **only when you ask**, and only through
 Default CLI: [Grok](https://x.ai). gobs is a launcher, not a new chat UI.
 
 **How to use (full walkthrough):** [docs/usage.md](docs/usage.md) ·
-[中文](docs/usage.zh.md)
+[中文](docs/usage.zh.md) ·
+[学习模式](docs/learn.zh.md)
 
 ---
 
@@ -40,8 +41,9 @@ gobs                               # open vault, start Grok
 
 Empty vault, optional PARA-like skeleton: `gobs init ~/Notes/Vault --skeleton`.
 
-`gobs init` upserts a save-protocol block in `AGENTS.md`, installs
-`/save-to-vault`, and creates `99_Archive/transcripts/` if needed.
+`gobs init` upserts save + learn protocol blocks in `AGENTS.md`, installs
+`/save-to-vault` and `/learn-domain`, and creates `15_Learn/` plus
+`99_Archive/transcripts/` if needed.
 `--force-agents` is the only way to overwrite `AGENTS.md`.
 
 Private rules (calendar, language, “don’t touch this folder”) stay in **your**
@@ -61,6 +63,20 @@ gobs sessions
 
 Talk in Grok with the vault open. Reading and drafting an explainer page is
 normal conversation. **Saving** is a separate sentence.
+
+### Learn mode (L0 → L1)
+
+Learning is optional. It does not replace the launcher.
+
+```text
+gobs learn start Transformer
+gobs learn start 英语
+gobs learn status
+```
+
+This creates or opens `15_Learn/<name>.md`, then starts Grok with: do not lecture,
+write 定界 first. Promotion to L1 happens only when you say **确认升到 L1**.
+Details: [docs/learn.zh.md](docs/learn.zh.md).
 
 ### Save (current note)
 
@@ -100,6 +116,8 @@ gobs --new
 gobs --resume ID
 gobs --no-open
 gobs init [vault] [--skeleton] [--force-agents]
+gobs learn start NAME [--no-launch]
+gobs learn status
 gobs save --note REL.md --body-file FILE [--chat-file FILE] [--title NAME]
 gobs sessions
 gobs doctor
@@ -119,11 +137,13 @@ gobs save --note 30_Lessons/idea.md --body-file distilled.md --chat-file chat.md
 
 - [docs/usage.md](docs/usage.md) — full how-to (setup, talk, save, archive, troubleshooting)
 - [docs/usage.zh.md](docs/usage.zh.md) — 中文用法
+- [docs/learn.zh.md](docs/learn.zh.md) — L0→L1 学习模式
 - [docs/saving.md](docs/saving.md) — save/archive protocol
 - [docs/other-clis.md](docs/other-clis.md) — Claude Code, Codex, …
 
 Config: `~/.gobs/config.toml` and `<vault>/.gobs/config.toml`.
-Child env: `GOBS=1`, `GOBS_VAULT`, `GOBS_CLI`.
+Child env: `GOBS=1`, `GOBS_VAULT`, `GOBS_CLI` (learn mode also sets
+`GOBS_LEARN=1`, `GOBS_LEARN_NOTE`).
 
 ## License
 
