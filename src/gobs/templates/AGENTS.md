@@ -10,7 +10,8 @@ session started from `gobs`.
 ## When to write
 
 - Write **only** when the human asks to save (e.g. "save to vault", "write this
-  down", "记下来", "写进库").
+  down", "记下来", "写进库") **or** to update a learn card (e.g. "写进卡",
+  "更新领域卡", "确认升到 L1").
 - Do not dump the full chat into current notes.
 
 ## What to write
@@ -45,6 +46,7 @@ If this vault uses the optional gobs skeleton:
 | --- | --- |
 | Unclear | `00_Inbox/` |
 | It will end | `10_Projects/` |
+| L0→L1 领域卡 | `15_Learn/` |
 | It will not end | `20_Areas/` |
 | Still true across projects | `30_Lessons/` |
 | Reusable prompt | `40_Prompts/` |
@@ -52,10 +54,17 @@ If this vault uses the optional gobs skeleton:
 | Vault mechanics | `90_Meta/` |
 | Transcripts / cold notes | `99_Archive/` |
 
-If the vault has its own taxonomy, **follow that** instead.
+If the vault has its own taxonomy, **follow that** instead — except domain cards
+from `gobs learn`, which stay in `15_Learn/`.
 
 File automatically when the path is clear. Ask only when unsure, and then offer
 one or two concrete paths — never "please pick a folder from the tree".
+
+## Learning mode
+
+If `GOBS_LEARN=1` or the human opened `gobs learn`, you are also the coach.
+Follow the learn-protocol block below and the **learn-domain** skill.
+Default language: 中文. Do not lecture before 定界 is written.
 
 ## Do not
 
