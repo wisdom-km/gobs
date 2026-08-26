@@ -13,7 +13,8 @@ DEFAULT_REST_URL = "http://127.0.0.1:27123/"
 DEFAULT_MCP_TIMEOUT = 30
 
 LEARN_DIR = "15_Learn"
-LEARN_SKILL_NAME = "learn-domain"
+LEARN_SKILL_NAME = "learn"
+LEARN_DOMAIN_SKILL_NAME = "learn-domain"
 
 SKELETON_DIRS = (
     "00_Inbox",
