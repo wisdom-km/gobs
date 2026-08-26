@@ -7,6 +7,7 @@ scene: ""
 enough: ""
 stop: ""
 open_door: first
+session_id: ""
 doors:
   - id: first
     title: 第一扇门（命名前用这个）

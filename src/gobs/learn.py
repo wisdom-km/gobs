@@ -21,6 +21,7 @@ _LEVEL = re.compile(r"^level:\s*(\S+)", re.M)
 _STATUS = re.compile(r"^status:\s*(\S+)", re.M)
 _TITLE = re.compile(r"^title:\s*[\"']?(.*?)[\"']?\s*$", re.M)
 _DOOR = re.compile(r"^open_door:\s*(\S+)", re.M)
+_SESSION = re.compile(r"^session_id:\s*(\S+)", re.M)
 
 
 def _template_file(*parts: str) -> str:
@@ -54,6 +55,7 @@ class DomainCard:
     level: str
     status: str
     open_door: str
+    session_id: str = ""
 
     @property
     def rel(self) -> str:
@@ -68,17 +70,22 @@ def parse_card(path: Path, vault: Path) -> DomainCard | None:
     block = m.group(1) if m else ""
     if "gobs_type: domain" not in block and "gobs_type: domain" not in text:
         return None
-    title = (_TITLE.search(block) or _TITLE.search(text))
-    level = (_LEVEL.search(block) or _LEVEL.search(text))
-    status = (_STATUS.search(block) or _STATUS.search(text))
-    door = (_DOOR.search(block) or _DOOR.search(text))
+    title = _TITLE.search(block) or _TITLE.search(text)
+    level = _LEVEL.search(block) or _LEVEL.search(text)
+    status = _STATUS.search(block) or _STATUS.search(text)
+    door = _DOOR.search(block) or _DOOR.search(text)
+    session = _SESSION.search(block) or _SESSION.search(text)
     rel = path.resolve().relative_to(vault.resolve())
+    sid = session.group(1).strip() if session else ""
+    if sid in {"\"\"", "''", "~", "null", "None"}:
+        sid = ""
     return DomainCard(
         path=rel,
         title=(title.group(1).strip() if title else path.stem),
         level=(level.group(1).strip() if level else "L0"),
         status=(status.group(1).strip() if status else "active"),
         open_door=(door.group(1).strip() if door else "first"),
+        session_id=sid,
     )
 
 
@@ -113,25 +120,75 @@ def create_domain(vault: Path, name: str) -> tuple[Path, str]:
     return dest.resolve().relative_to(vault.resolve()), "created"
 
 
+def bind_session(vault: Path, rel: Path | str, session_id: str) -> None:
+    """Write session_id into the domain card frontmatter."""
+    path = vault / Path(rel)
+    if not path.is_file():
+        raise LearnError(f"domain card missing: {rel}")
+    text = path.read_text(encoding="utf-8")
+    m = _FRONT.match(text)
+    if not m:
+        raise LearnError(f"no frontmatter on {rel}")
+    block = m.group(1)
+    if _SESSION.search(block):
+        block2 = _SESSION.sub(f"session_id: {session_id}", block, count=1)
+    else:
+        block2 = block.rstrip() + f"\nsession_id: {session_id}\n"
+    if "updated:" in block2:
+        block2 = re.sub(
+            r"^updated:.*$",
+            f"updated: {date.today().isoformat()}",
+            block2,
+            count=1,
+            flags=re.M,
+        )
+    else:
+        block2 = block2.rstrip() + f"\nupdated: {date.today().isoformat()}\n"
+    new_text = f"---\n{block2.rstrip()}\n---\n" + text[m.end() :]
+    path.write_text(new_text, encoding="utf-8")
+
+
 def format_status(cards: list[DomainCard]) -> str:
     if not cards:
         return "15_Learn/ 里还没有领域卡。用 gobs learn start <名称> 开一张。"
     lines = []
     for card in cards:
+        sid = card.session_id or "-"
         lines.append(
-            f"{card.level:3}  {card.status:8}  door={card.open_door:12}  {card.path}  {card.title}"
+            f"{card.level:3}  {card.status:8}  door={card.open_door:12}  "
+            f"session={sid[:12]:12}  {card.path}  {card.title}"
         )
     return "\n".join(lines)
 
 
-def boot_prompt(rel_note: str, title: str) -> str:
+def boot_prompt(
+    rel_note: str,
+    title: str,
+    *,
+    resume: bool = False,
+    level: str = "L0",
+) -> str:
+    base = (
+        f"先读领域卡 [[{rel_note.replace('.md', '')}]]（文件 {rel_note}）"
+        f"和 AGENTS.md 里的学习协议。领域：{title}。档位：{level}。"
+    )
+    sync = (
+        "阶段性完成后（定界写完 / 样例讲完 / 回教四问答完），先问我："
+        "「要不要把这一块同步进领域卡？」只有我说同意或「写进卡」才改文件。"
+        "禁止每轮自动写库，禁止把聊天原文写进领域卡。"
+    )
+    if resume:
+        return (
+            f"续学模式已打开。{base}"
+            "不要从头讲课。先看卡上已有内容和 open_door，从缺的那一块继续。"
+            f"{sync}"
+        )
     return (
-        f"学习模式已打开。先读领域卡 [[{rel_note.replace('.md', '')}]] "
-        f"（文件 {rel_note}）和 AGENTS.md 里的学习协议。"
-        f"领域：{title}。现在是 L0→L1。"
+        f"学习模式已打开。{base} 现在是 L0→L1。"
         "不要讲课，不要公式，不要一次丢超过三个新零件。"
         "先逼我写出三句定界：场景 / 够用（可检查的行为）/ 停线。"
-        "我写完你只砍过大的目标。在我说「写进卡」之前不要改库。"
+        "我写完你只砍过大的目标。"
+        f"{sync}"
     )
 
 
