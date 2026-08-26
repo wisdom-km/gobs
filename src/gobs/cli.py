@@ -11,11 +11,20 @@ from gobs.config import load_user_config, write_user_config
 from gobs.doctor import doctor
 from gobs.init_cmd import init_vault
 from gobs.launch import LaunchError, launch
+from gobs.learn import (
+    LearnError,
+    boot_prompt,
+    create_domain,
+    format_status,
+    list_domains,
+    parse_card,
+    resolve_learn_vault,
+)
 from gobs.save import SaveError, save_note
 from gobs.sessions import listed_gobs_sessions
 
 
-COMMANDS = {"init", "config", "launch", "doctor", "save", "sessions"}
+COMMANDS = {"init", "config", "launch", "doctor", "save", "sessions", "learn"}
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -43,7 +52,7 @@ def _parser() -> argparse.ArgumentParser:
     init_p.add_argument(
         "--skeleton",
         action="store_true",
-        help="Create the optional 00_Inbox / 10_Projects / … folders if missing",
+        help="Create the optional 00_Inbox / 15_Learn / 10_Projects / … folders if missing",
     )
     init_p.add_argument(
         "--force-agents",
@@ -73,6 +82,17 @@ def _parser() -> argparse.ArgumentParser:
 
     sess_p = sub.add_parser("sessions", help="List gobs-tagged sessions for the vault")
     sess_p.add_argument("vault", nargs="?", help="Vault path")
+
+    learn_p = sub.add_parser("learn", help="L0→L1 coach mode against a domain card")
+    learn_sub = learn_p.add_subparsers(dest="learn_cmd")
+    start_p = learn_sub.add_parser("start", help="Open or create a domain card, then launch")
+    start_p.add_argument("name", help="Domain name, e.g. Transformer or 英语")
+    start_p.add_argument("--vault", help="Vault path")
+    start_p.add_argument("--cli", help="CLI to spawn")
+    start_p.add_argument("--no-open", action="store_true")
+    start_p.add_argument("--no-launch", action="store_true", help="Only create/print the card")
+    stat_p = learn_sub.add_parser("status", help="List domain cards in 15_Learn/")
+    stat_p.add_argument("--vault", help="Vault path")
     return p
 
 
@@ -150,6 +170,31 @@ def _cmd_sessions(vault: Path | None) -> int:
     return 0
 
 
+def _cmd_learn(ns: argparse.Namespace) -> int:
+    if ns.learn_cmd == "status":
+        vault = resolve_learn_vault(Path(ns.vault) if ns.vault else None)
+        print(format_status(list_domains(vault)))
+        return 0
+    if ns.learn_cmd != "start":
+        print("usage: gobs learn start <名称> | gobs learn status", file=sys.stderr)
+        return 2
+    vault = resolve_learn_vault(Path(ns.vault) if ns.vault else None)
+    rel, action = create_domain(vault, ns.name)
+    print(f"gobs learn: {action:8} {rel}")
+    card = parse_card(vault / rel, vault)
+    title = card.title if card else ns.name
+    if ns.no_launch:
+        return 0
+    return launch(
+        vault,
+        cli=ns.cli,
+        open_obsidian=False if ns.no_open else None,
+        new_session=True,
+        boot_prompt=boot_prompt(rel.as_posix(), title),
+        learn_note=rel.as_posix(),
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _parser()
     ns = parser.parse_args(_normalize_argv(argv))
@@ -177,6 +222,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_save(ns)
         if ns.command == "sessions":
             return _cmd_sessions(Path(ns.vault) if ns.vault else None)
+        if ns.command == "learn":
+            return _cmd_learn(ns)
         extra = list(ns.extra or [])
         if extra and extra[0] == "--":
             extra = extra[1:]
@@ -188,6 +235,6 @@ def main(argv: list[str] | None = None) -> int:
             new_session=ns.new,
             resume_id=ns.resume,
         )
-    except (LaunchError, FileNotFoundError, SaveError) as exc:
+    except (LaunchError, FileNotFoundError, SaveError, LearnError) as exc:
         print(f"gobs: {exc}", file=sys.stderr)
         return 1
