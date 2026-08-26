@@ -14,6 +14,7 @@ from gobs.config import (
 from gobs.constants import (
     AGENTS_NAME,
     LEARN_DIR,
+    LEARN_DOMAIN_SKILL_NAME,
     LEARN_PROTOCOL_BEGIN,
     LEARN_PROTOCOL_END,
     LEARN_SKILL_NAME,
@@ -148,6 +149,9 @@ def init_vault(
     actions[f".grok/skills/{SAVE_SKILL_NAME}/SKILL.md"] = install_save_skill(vault)
     actions[f".grok/skills/{LEARN_SKILL_NAME}/SKILL.md"] = install_skill(
         vault, LEARN_SKILL_NAME
+    )
+    actions[f".grok/skills/{LEARN_DOMAIN_SKILL_NAME}/SKILL.md"] = install_skill(
+        vault, LEARN_DOMAIN_SKILL_NAME
     )
 
     user = load_user_config()
