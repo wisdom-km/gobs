@@ -13,6 +13,10 @@ from gobs.config import (
 )
 from gobs.constants import (
     AGENTS_NAME,
+    LEARN_DIR,
+    LEARN_PROTOCOL_BEGIN,
+    LEARN_PROTOCOL_END,
+    LEARN_SKILL_NAME,
     OBS_MARKER,
     PROTOCOL_BEGIN,
     PROTOCOL_END,
@@ -33,26 +37,34 @@ def _template(name: str) -> str:
     return _template_file(name)
 
 
-def upsert_protocol_block(existing: str, block: str) -> str:
+def upsert_marked_block(existing: str, block: str, begin: str, end: str) -> str:
     block = block.strip() + "\n"
-    start = existing.find(PROTOCOL_BEGIN)
-    end = existing.find(PROTOCOL_END)
-    if start != -1 and end != -1 and end > start:
-        end += len(PROTOCOL_END)
-        return existing[:start].rstrip() + "\n\n" + block + existing[end:].lstrip("\n")
+    start = existing.find(begin)
+    stop = existing.find(end)
+    if start != -1 and stop != -1 and stop > start:
+        stop += len(end)
+        return existing[:start].rstrip() + "\n\n" + block + existing[stop:].lstrip("\n")
     if existing.strip():
         return existing.rstrip() + "\n\n" + block
     return block
 
 
-def install_save_skill(vault: Path) -> str:
-    dest_dir = vault / ".grok" / "skills" / SAVE_SKILL_NAME
+def upsert_protocol_block(existing: str, block: str) -> str:
+    return upsert_marked_block(existing, block, PROTOCOL_BEGIN, PROTOCOL_END)
+
+
+def install_skill(vault: Path, name: str) -> str:
+    dest_dir = vault / ".grok" / "skills" / name
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / "SKILL.md"
-    text = _template_file("skills", "save-to-vault", "SKILL.md")
+    text = _template_file("skills", name, "SKILL.md")
     existed = dest.exists()
     dest.write_text(text, encoding="utf-8")
     return "updated" if existed else "created"
+
+
+def install_save_skill(vault: Path) -> str:
+    return install_skill(vault, SAVE_SKILL_NAME)
 
 
 def init_vault(
@@ -78,6 +90,16 @@ def init_vault(
     else:
         actions[OBS_MARKER] = "skipped"
 
+    learn = vault / LEARN_DIR
+    if not learn.exists():
+        learn.mkdir(parents=True, exist_ok=True)
+        keep = learn / ".gitkeep"
+        if not keep.exists():
+            keep.write_text("", encoding="utf-8")
+        actions[LEARN_DIR] = "created"
+    else:
+        actions[LEARN_DIR] = "skipped"
+
     if skeleton:
         for rel in SKELETON_DIRS:
             d = vault / rel
@@ -87,7 +109,7 @@ def init_vault(
                 if not keep.exists():
                     keep.write_text("", encoding="utf-8")
                 actions[rel] = "created"
-            else:
+            elif rel not in actions:
                 actions[rel] = "skipped"
         home = vault / "README.md"
         if not home.exists():
@@ -97,15 +119,26 @@ def init_vault(
             actions["README.md"] = "skipped"
 
     protocol = _template("save_protocol.md")
+    learn_protocol = _template("learn_protocol.md")
     agents = vault / AGENTS_NAME
     if force_agents or not agents.exists():
         existed = agents.exists()
-        full = _template("AGENTS.md").rstrip() + "\n\n" + protocol.strip() + "\n"
+        full = (
+            _template("AGENTS.md").rstrip()
+            + "\n\n"
+            + protocol.strip()
+            + "\n\n"
+            + learn_protocol.strip()
+            + "\n"
+        )
         agents.write_text(full, encoding="utf-8")
         actions[AGENTS_NAME] = "updated" if existed else "created"
     else:
         before = agents.read_text(encoding="utf-8")
         after = upsert_protocol_block(before, protocol)
+        after = upsert_marked_block(
+            after, learn_protocol, LEARN_PROTOCOL_BEGIN, LEARN_PROTOCOL_END
+        )
         if after != before:
             agents.write_text(after, encoding="utf-8")
             actions[AGENTS_NAME] = "updated"
@@ -113,6 +146,9 @@ def init_vault(
             actions[AGENTS_NAME] = "skipped"
 
     actions[f".grok/skills/{SAVE_SKILL_NAME}/SKILL.md"] = install_save_skill(vault)
+    actions[f".grok/skills/{LEARN_SKILL_NAME}/SKILL.md"] = install_skill(
+        vault, LEARN_SKILL_NAME
+    )
 
     user = load_user_config()
     cfg = GobsConfig(
