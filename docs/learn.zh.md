@@ -1,51 +1,38 @@
 # gobs learn：L0 → L1
 
-`gobs` 仍是通用发射器。学习是一种模式，用 `gobs learn` 进入。
+`gobs` 仍是通用发射器。学习是一种模式，用 `gobs learn` 进入。**不推翻旧的** `gobs` / `save` / `sessions`。
 
-## 手算 / 消融模板是什么（本期不做）
+## 与旧 gobs 的三条桥
 
-这两张是 **L2** 用的固定草稿，不是 L1 的事。
+1. **续学**：`gobs learn start NAME --resume ID` 或卡上已有 `session_id` 时自动续该会话；也可在列表里选旧对话。
+2. **领域卡 ↔ session**：frontmatter 的 `session_id`；`gobs learn status` 会打印。会话结束后写回卡上。
+3. **半自动写卡**：定界/样例/回教完成后教练**先问**「要不要同步进卡？」，你同意才改。不每轮自动落盘。
 
-- **手算模板**：把公式缩到 2 个词 × 2 维，在纸上或一张笔记里把数字算一遍。用来让符号变成机器，而不是再听一个类比。
-- **消融模板**：一张表，每行是「拿掉 X 会坏在哪」。用来验收你是否真懂设计，而不是会复述结构图。
+## 手算 / 消融模板（本期不做）
 
-一期只把这两条规则写进 `AGENTS.md` 的学习协议。真正的空白页下期再加。L1 不需要它们。
+L2 用的固定草稿：极小数字手算、「拿掉 X 会坏在哪」表。规则已写在协议，空白页下期加。
 
 ## 命令
 
-先对已有库执行一次（不会覆盖你自己的 `AGENTS.md` 正文，只插入协议块）：
-
 ```bash
 gobs init "/path/to/vault"
-```
-
-然后：
-
-```bash
 gobs learn start Transformer
-gobs learn start 英语
+gobs learn start Transformer --new
+gobs learn start Transformer --resume SESSION_ID
 gobs learn status
-gobs learn start 医疗 --no-launch   # 只建卡，不打开 CLI
+gobs learn start 医疗 --no-launch
 ```
 
-`start` 会：
+## 领域卡
 
-1. 在 `15_Learn/<名称>.md` 建一张领域卡（已有则打开）
-2. 设置 `GOBS_LEARN=1`、`GOBS_LEARN_NOTE=…`
-3. 启动 Grok，并塞一句开场：**先不要讲课，先定界**
+`15_Learn/<名称>.md`：定界、四列表、样例、回教、洞、过关、门队列、`session_id`。
 
-## 领域卡里有什么
+升档：你说「确认升到 L1」。
 
-定界、四列表、当前样例、回教四问、洞、L1 过关清单、最多 5 扇门。一次只开一扇。
-
-升档：模型对照清单建议，你说「确认升到 L1」才改 `level`。
-
-## 和「写进库」的分工
+## 与「写进库」
 
 | 你说 | 发生什么 |
 | --- | --- |
-| 写进卡 / 更新领域卡 | 改 `15_Learn/` 那一张 |
-| 写进库 / 记下来 | 精炼笔记，走原来的 `gobs save` |
-| 连同原文 | 原文进 `99_Archive/transcripts/` |
-
-日常对话默认不写库。
+| 写进卡 / 同步到卡 | 改 `15_Learn/` |
+| 写进库 | `gobs save` 精炼笔记 |
+| 连同原文 | transcript 归档 |

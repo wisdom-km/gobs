@@ -8,7 +8,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from gobs.cli import main  # noqa: E402
 from gobs.init_cmd import init_vault  # noqa: E402
-from gobs.learn import create_domain, list_domains, slugify  # noqa: E402
+from gobs.learn import (  # noqa: E402
+    bind_session,
+    create_domain,
+    list_domains,
+    parse_card,
+    slugify,
+)
 
 
 class LearnTests(unittest.TestCase):
@@ -38,6 +44,7 @@ class LearnTests(unittest.TestCase):
             text = (vault / rel).read_text(encoding="utf-8")
             self.assertIn("gobs_type: domain", text)
             self.assertIn("level: L0", text)
+            self.assertIn("session_id:", text)
             self.assertIn("先不要讲课", text)
             rel2, action2 = create_domain(vault, "Transformer")
             self.assertEqual(action2, "exists")
@@ -45,6 +52,21 @@ class LearnTests(unittest.TestCase):
             cards = list_domains(vault)
             self.assertEqual(len(cards), 1)
             self.assertEqual(cards[0].level, "L0")
+
+    def test_bind_session(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            vault = tmp / "vault"
+            vault.mkdir()
+            with patch("gobs.config.user_config_path", self._home(tmp)):
+                init_vault(vault, skeleton=False, set_default=False)
+            rel, _ = create_domain(vault, "Transformer")
+            bind_session(vault, rel, "abc123session")
+            card = parse_card(vault / rel, vault)
+            assert card is not None
+            self.assertEqual(card.session_id, "abc123session")
+            text = (vault / rel).read_text(encoding="utf-8")
+            self.assertIn("session_id: abc123session", text)
 
     def test_learn_start_no_launch(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -60,7 +82,7 @@ class LearnTests(unittest.TestCase):
                 main(["init", str(vault), "--no-default"])
                 code = main(["learn", "start", "英语", "--vault", str(vault), "--no-launch"])
             self.assertEqual(code, 0)
-            self.assertTrue((vault / "15_Learn" / "英语.md").is_file())
+            self.assertTrue((vault / "15_Learn" / " 1语.md").is_file())
 
     def test_init_installs_learn_protocol(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -72,9 +94,10 @@ class LearnTests(unittest.TestCase):
             agents = (vault / "AGENTS.md").read_text(encoding="utf-8")
             self.assertIn("gobs:learn-protocol", agents)
             self.assertIn("15_Learn", agents)
+            self.assertIn("session_id", agents)
             skill = vault / ".grok" / "skills" / "learn-domain" / "SKILL.md"
             self.assertTrue(skill.is_file())
-            self.assertIn("不要讲课", skill.read_text(encoding="utf-8"))
+            self.assertIn("同步进领域卡", skill.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
