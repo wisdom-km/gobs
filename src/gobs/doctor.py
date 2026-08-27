@@ -8,7 +8,13 @@ import sys
 from pathlib import Path
 
 from gobs.config import load_user_config, load_vault_config, resolve_vault
-from gobs.constants import AGENTS_NAME, OBS_MARKER, SAVE_SKILL_NAME
+from gobs.constants import (
+    AGENTS_NAME,
+    LEARN_DOMAIN_SKILL_NAME,
+    LEARN_SKILL_NAME,
+    OBS_MARKER,
+    SAVE_SKILL_NAME,
+)
 from gobs.obsidian import endpoint_up, find_obsidian_executable
 
 if sys.version_info >= (3, 11):
@@ -123,11 +129,12 @@ def doctor(vault: Path | None = None) -> int:
     else:
         warn(f"no {AGENTS_NAME} — the CLI will not see gobs conventions. Run `gobs init`.")
 
-    skill = vault_path / ".grok" / "skills" / SAVE_SKILL_NAME / "SKILL.md"
-    if skill.is_file():
-        ok(f"skill /{SAVE_SKILL_NAME}")
-    else:
-        warn(f"no /{SAVE_SKILL_NAME} skill — run `gobs init` (writes .grok/skills/)")
+    for name in (SAVE_SKILL_NAME, LEARN_SKILL_NAME, LEARN_DOMAIN_SKILL_NAME):
+        skill = vault_path / ".grok" / "skills" / name / "SKILL.md"
+        if skill.is_file():
+            ok(f"skill /{name}")
+        else:
+            warn(f"no /{name} skill — run `gobs init` (writes .grok/skills/)")
 
     cfg = load_vault_config(vault_path, load_user_config())
     transcripts = vault_path / cfg.transcripts
