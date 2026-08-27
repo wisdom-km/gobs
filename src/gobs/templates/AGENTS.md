@@ -22,7 +22,10 @@ session started from `gobs`.
 - Prefer editing an existing page over opening a same-topic duplicate. Search first.
 - Match the vault's existing note style (frontmatter, heading level, language).
 - If this vault has a home note (`README.md` or similar), only change it when
-  the human wants today's reading pointer updated.
+  the human wants today's reading pointer updated. **Today's reading is that
+  home note only** — do not copy the path into a memory note (GROK.md).
+- For a paper/topic folder: edit the 讲解 page by default. Touch the learn
+  domain card only when the human is in `/learn` and says 保存 / 写进卡.
 
 ## Transcripts (optional)
 

@@ -6,9 +6,9 @@ type: home
 # Today
 
 - (the note you should read)
-- 学习卡：主题文件夹里 `gobs_type: domain` 且 `status: active` 的那一张
 
 Open the vault, read this page. Folders on the left are not the daily UI.
+Do not copy this path into GROK.md or other memory notes.
 
 ## How to talk to the AI
 

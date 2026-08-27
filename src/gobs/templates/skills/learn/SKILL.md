@@ -13,6 +13,7 @@ argument-hint: "[领域名，如 Transformer 或 英语]"
 
 主入口仍是普通 `gobs`。本 skill 只在用户已经进了会话、再切到 `/learn` 时用。
 不要让用户退出去跑 `gobs learn start`。
+未进入本 skill 时：改主题夹里的**讲解**页，不要改进度卡。
 
 ## 步骤
 
