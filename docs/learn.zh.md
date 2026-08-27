@@ -48,3 +48,4 @@ gobs init "/path/to/vault"
 ```
 
 会安装 `.grok/skills/learn` 与 `learn-domain`，并插入学习协议。
+`gobs init` 还会把离线画图页装进 `80_meta/gobs-viz/`（`画图.md` + `draw.html`）。encode / 地图课可在 Obsidian 里打开，用默认浏览器画「词在看谁」或印象包被挤，再把图贴回领域卡。不上网。

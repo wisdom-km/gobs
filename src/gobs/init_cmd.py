@@ -24,6 +24,8 @@ from gobs.constants import (
     PROTOCOL_END,
     SAVE_SKILL_NAME,
     SKELETON_DIRS,
+    VIZ_DIR,
+    VIZ_FILES,
 )
 from gobs.learn import learn_dir as resolve_learn_dir
 
@@ -64,6 +66,21 @@ def install_skill(vault: Path, name: str) -> str:
     existed = dest.exists()
     dest.write_text(text, encoding="utf-8")
     return "updated" if existed else "created"
+
+
+
+def install_viz(vault: Path) -> dict[str, str]:
+    """Copy offline draw.html + 画图.md into 80_meta/gobs-viz/ on every init."""
+    dest_dir = vault / VIZ_DIR
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    actions: dict[str, str] = {}
+    for name in VIZ_FILES:
+        dest = dest_dir / name
+        text = _template_file("viz", name)
+        existed = dest.exists()
+        dest.write_text(text, encoding="utf-8")
+        actions[f"{VIZ_DIR}/{name}"] = "updated" if existed else "created"
+    return actions
 
 
 def install_save_skill(vault: Path) -> str:
@@ -156,6 +173,8 @@ def init_vault(
     actions[f".grok/skills/{LEARN_DOMAIN_SKILL_NAME}/SKILL.md"] = install_skill(
         vault, LEARN_DOMAIN_SKILL_NAME
     )
+
+    actions.update(install_viz(vault))
 
     user = load_user_config()
     existing = load_vault_config(vault, user)

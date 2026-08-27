@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gobs 画图</title>
+<style>
+  :root {
+    --bg: #f6f1e7;
+    --ink: #2b241c;
+    --muted: #6d6254;
+    --card: #fffdf8;
+    --line: #d9cfc0;
+    --teal: #2a6f6f;
+    --teal-soft: #d7eceb;
+    --coral: #c23b22;
+    --coral-soft: #f6d9d3;
+    --sand: #8a7a5c;
+    --ok: #1a5c3a;
+    --smear: #c4b8a5;
+    --tap: 52px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 18px; line-height: 1.45; }
+  body { max-width: 880px; margin: 0 auto; padding: 16px 14px 48px; }
+  h1 { font-size: 1.6rem; margin: 8px 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 16px; font-size: 0.95rem; }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tab, button, .word, .step-btn {
+    min-height: var(--tap); min-width: var(--tap);
+    border-radius: 14px; border: 3px solid var(--line);
+    background: var(--card); color: var(--ink);
+    font: inherit; font-weight: 650; padding: 10px 16px; cursor: pointer;
+  }
+  .tab.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .panel { display: none; background: var(--card); border: 3px solid var(--line);
+    border-radius: 18px; padding: 16px; }
+  .panel.on { display: block; }
+  .hint { background: var(--teal-soft); border-radius: 12px; padding: 10px 12px;
+    margin: 0 0 14px; color: #1c4444; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 14px; align-items: center; }
+  input[type="text"] {
+    flex: 1; min-width: 180px; min-height: var(--tap); font: inherit;
+    border: 3px solid var(--line); border-radius: 14px; padding: 8px 12px; background: #fff;
+  }
+  .words { position: relative; display: flex; flex-wrap: wrap; gap: 10px; min-height: 64px; }
+  .word.source { background: var(--teal-soft); border-color: var(--teal); }
+  .word.hi { background: var(--coral-soft); border-color: var(--coral); }
+  .word.lo { background: #efe8da; border-color: var(--sand); color: #4d4436; }
+  .word small { display: block; font-size: 0.7rem; font-weight: 700; color: var(--muted); }
+  svg.arrows { display: block; width: 100%; height: 90px; }
+  .legend { color: var(--muted); font-size: 0.9rem; margin: 8px 0 12px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .ghost { background: transparent; }
+  .toast { min-height: 2em; margin-top: 10px; color: var(--ok); font-weight: 700; }
+  .preview {
+    white-space: pre-wrap; background: #2b241c; color: #f6f1e7;
+    border-radius: 12px; padding: 12px; font-size: 0.85rem; margin-top: 10px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .queue { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+  .tok { min-height: 48px; padding: 8px 12px; border-radius: 12px; border: 3px solid var(--line);
+    background: #fff; font-weight: 700; }
+  .tok.now { border-color: var(--teal); background: var(--teal-soft); }
+  .tok.done { opacity: 0.55; }
+  .tok.wait { opacity: 0.35; }
+  .pack { display: flex; gap: 10px; flex-wrap: wrap; min-height: 90px; margin: 8px 0 14px; }
+  .slot { min-width: 110px; min-height: 84px; border-radius: 14px; border: 3px solid var(--line);
+    padding: 10px; background: #fff; }
+  .slot.clear { border-color: var(--ok); background: #e5f3ea; }
+  .slot.mid { border-color: var(--sand); background: #efe8da; }
+  .slot.smear { border-color: var(--smear); background: #ebe6dc; color: var(--muted);
+    filter: blur(0.4px); opacity: 0.85; }
+  .slot .lab { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+  .boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .box { border: 3px dashed var(--line); border-radius: 14px; padding: 10px; background: #fff; }
+  .box input { width: 100%; margin: 6px 0 0; }
+  .box .cap { font-size: 0.8rem; color: var(--muted); font-weight: 700; }
+</style>
+</head>
+<body>
+  <h1>gobs 画图</h1>
+  <p class="sub">不上网。一次一张图。点完「复制到笔记」，贴回领域卡。</p>
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="look" type="button">看谁</button>
+    <button class="tab" data-tab="pack" type="button">印象包</button>
+    <button class="tab" data-tab="map" type="button">地图</button>
+  </div>
+
+  <section id="look" class="panel on">
+    <p class="hint">先点「看的人」，再点它在看谁。再点一次改成细箭头，第三次取消。一次最多点亮 4 个词。</p>
+    <div class="row">
+      <input id="look-sentence" type="text" value="The animal didn't cross the street because it was too tired" aria-label="句子">
+      <button type="button" id="look-apply">换句子</button>
+    </div>
+    <div id="look-words" class="words"></div>
+    <svg class="arrows" id="look-svg" aria-hidden="true"></svg>
+    <p class="legend">粗箭头 = 很相关　　细箭头 = 有点相关　　点亮上限 4 个词</p>
+    <div class="actions">
+      <button type="button" class="primary" id="look-copy">复制到笔记</button>
+      <button type="button" class="ghost" id="look-clear">清空</button>
+    </div>
+    <div class="toast" id="look-toast"></div>
+    <pre class="preview" id="look-preview" hidden></pre>
+  </section>
+
+  <section id="pack" class="panel">
+    <p class="hint">一步一步走进队列。左边的「包」里：谁还清楚、谁已经糊。「有 attention」时全班同时看得见。</p>
+    <div class="row">
+      <input id="pack-sentence" type="text" value="The animal didn't cross the street because it" aria-label="队列句子">
+      <button type="button" id="pack-apply">换句子</button>
+    </div>
+    <div class="row">
+      <button type="button" class="step-btn" id="pack-prev">上一步</button>
+      <strong id="pack-step">第 1 / 8 步</strong>
+      <button type="button" class="step-btn" id="pack-next">下一步</button>
+    </div>
+    <div class="row">
+      <button type="button" class="tab active" id="pack-mode-queue">没有它（排队）</button>
+      <button type="button" class="tab" id="pack-mode-att">有 attention</button>
+    </div>
+    <div class="queue" id="pack-queue"></div>
+    <p class="legend" id="pack-cap">包</p>
+    <div class="pack" id="pack-slots"></div>
+    <div class="actions">
+      <button type="button" class="primary" id="pack-copy">复制到笔记</button>
+    </div>
+    <div class="toast" id="pack-toast"></div>
+    <pre class="preview" id="pack-preview" hidden></pre>
+  </section>
+
+  <section id="map" class="panel">
+    <p class="hint">这一课只画一张地图。每格写一块地盘，再写这块的皇冠概念。空格不会导出。</p>
+    <div class="boxes" id="map-boxes"></div>
+    <div class="actions">
+      <button type="button" class="primary" id="map-copy">复制到笔记</button>
+      <button type="button" class="ghost" id="map-clear">清空</button>
+    </div>
+    <div class="toast" id="map-toast"></div>
+    <pre class="preview" id="map-preview" hidden></pre>
+  </section>
+
+<script>
+(function () {
+  var MAX_LIT = 4;
+  var lookWords = [];
+  var source = -1;
+  var links = {}; // index -> "hi" | "lo"
+  var packTokens = [];
+  var packStep = 1;
+  var packAtt = false;
+
+  function $(id) { return document.getElementById(id); }
+  function splitWords(s) {
+    return String(s || "").trim().split(/\s+/).filter(Boolean);
+  }
+  function toast(id, msg) { $(id).textContent = msg || ""; }
+  function showPrev(id, text) {
+    var el = $(id);
+    el.hidden = !text;
+    el.textContent = text || "";
+  }
+  function copyText(text, toastId, prevId) {
+    function ok() {
+      toast(toastId, "已复制，去笔记里粘贴。");
+      showPrev(prevId, text);
+    }
+    function fail() {
+      toast(toastId, "复制失败：请手动选中下面的字。");
+      showPrev(prevId, text);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok).catch(function () {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+          ok();
+        } catch (e) { fail(); }
+      });
+    } else {
+      try {
+        var ta2 = document.createElement("textarea");
+        ta2.value = text;
+        document.body.appendChild(ta2);
+        ta2.select();
+        document.execCommand("copy");
+        ta2.remove();
+        ok();
+      } catch (e) { fail(); }
+    }
+  }
+
+  document.querySelectorAll(".tabs .tab").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".tabs .tab").forEach(function (b) { b.classList.remove("active"); });
+      document.querySelectorAll(".panel").forEach(function (p) { p.classList.remove("on"); });
+      btn.classList.add("active");
+      $(btn.getAttribute("data-tab")).classList.add("on");
+    });
+  });
+
+  function litCount() {
+    var n = source >= 0 ? 1 : 0;
+    Object.keys(links).forEach(function (k) { n += 1; });
+    return n;
+  }
+
+  function renderLook() {
+    var box = $("look-words");
+    box.innerHTML = "";
+    lookWords.forEach(function (w, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "word";
+      b.dataset.i = String(i);
+      var tag = "";
+      if (i === source) { b.classList.add("source"); tag = "看"; }
+      if (links[i] === "hi") { b.classList.add("hi"); tag = "高"; }
+      if (links[i] === "lo") { b.classList.add("lo"); tag = "低"; }
+      b.innerHTML = escapeHtml(w) + (tag ? "<small>" + tag + "</small>" : "");
+      b.addEventListener("click", function () { onLookTap(i); });
+      box.appendChild(b);
+    });
+    drawArrows();
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+    });
+  }
+
+  function onLookTap(i) {
+    if (source < 0) {
+      source = i;
+      renderLook();
+      toast("look-toast", "再点它在看的词。");
+      return;
+    }
+    if (i === source) {
+      source = -1;
+      links = {};
+      renderLook();
+      toast("look-toast", "换一个看的人吧。");
+      return;
+    }
+    if (links[i] === "hi") {
+      links[i] = "lo";
+    } else if (links[i] === "lo") {
+      delete links[i];
+    } else {
+      if (litCount() >= MAX_LIT) {
+        toast("look-toast", "一次最多点亮 4 个词。");
+        return;
+      }
+      links[i] = "hi";
+    }
+    renderLook();
+    toast("look-toast", "");
+  }
+
+  function drawArrows() {
+    var svg = $("look-svg");
+    svg.innerHTML = "";
+    if (source < 0) return;
+    var keys = Object.keys(links);
+    if (!keys.length) return;
+    var W = svg.clientWidth || 600;
+    svg.setAttribute("viewBox", "0 0 " + W + " 90");
+    var mid = W / 2;
+    keys.forEach(function (k, n) {
+      var i = Number(k);
+      var level = links[i];
+      var x2 = 40 + (W - 80) * ((n + 1) / (keys.length + 1));
+      var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      var d = "M " + mid + " 8 Q " + ((mid + x2) / 2) + " 70 " + x2 + " 82";
+      path.setAttribute("d", d);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", level === "hi" ? "#c23b22" : "#8a7a5c");
+      path.setAttribute("stroke-width", level === "hi" ? "7" : "2.5");
+      if (level === "lo") path.setAttribute("stroke-dasharray", "6 5");
+      svg.appendChild(path);
+      var lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      lab.setAttribute("x", String(x2));
+      lab.setAttribute("y", "88");
+      lab.setAttribute("text-anchor", "middle");
+      lab.setAttribute("font-size", "12");
+      lab.setAttribute("fill", "#6d6254");
+      lab.textContent = lookWords[i] + (level === "hi" ? " 高" : " 低");
+      svg.appendChild(lab);
+    });
+  }
+
+  function lookExport() {
+    if (source < 0 || !Object.keys(links).length) {
+      toast("look-toast", "先点看的人，再点它在看谁。");
+      return;
+    }
+    var src = lookWords[source];
+    var lines = ["flowchart LR", "  src[\"" + src + "\"]"];
+    var hi = [];
+    var lo = [];
+    Object.keys(links).forEach(function (k, n) {
+      var w = lookWords[Number(k)];
+      var id = "t" + n;
+      lines.push("  " + id + "[\"" + w + "\"]");
+      if (links[k] === "hi") {
+        lines.push("  src ==>|高| " + id);
+        hi.push(w);
+      } else {
+        lines.push("  src -.->|低| " + id);
+        lo.push(w);
+      }
+    });
+    var remember = [];
+    if (hi.length) remember.push("只要记住：" + src + " 主要在看 " + hi.join("、") + "。");
+    if (lo.length) remember.push("只要记住：" + lo.join("、") + " 几乎没被看。");
+    remember.push("只要记住：一次只盯几个字，别全亮。");
+    var text = "## 双编码\n\n```mermaid\n" + lines.join("\n") + "\n```\n\n" + remember.join("\n") + "\n";
+    copyText(text, "look-toast", "look-preview");
+  }
+
+  $("look-apply").addEventListener("click", function () {
+    lookWords = splitWords($("look-sentence").value);
+    source = -1;
+    links = {};
+    renderLook();
+    toast("look-toast", "");
+  });
+  $("look-clear").addEventListener("click", function () {
+    source = -1;
+    links = {};
+    renderLook();
+    toast("look-toast", "已清空。");
+    showPrev("look-preview", "");
+  });
+  $("look-copy").addEventListener("click", lookExport);
+
+  function setPackTokens() {
+    packTokens = splitWords($("pack-sentence").value);
+    if (packTokens.length > 8) packTokens = packTokens.slice(0, 8);
+    if (packTokens.length < 6 && packTokens.length > 0) {
+      /* keep as-is; 6–8 is the usual queue */
+    }
+    packStep = 1;
+    renderPack();
+  }
+
+  function renderPack() {
+    var n = packTokens.length || 1;
+    if (packStep < 1) packStep = 1;
+    if (packStep > n) packStep = n;
+    $("pack-step").textContent = "第 " + packStep + " / " + n + " 步";
+    var q = $("pack-queue");
+    q.innerHTML = "";
+    packTokens.forEach(function (w, i) {
+      var el = document.createElement("span");
+      el.className = "tok";
+      el.textContent = w;
+      if (packAtt) {
+        el.classList.add("now");
+      } else if (i + 1 === packStep) {
+        el.classList.add("now");
+      } else if (i + 1 < packStep) {
+        el.classList.add("done");
+      } else {
+        el.classList.add("wait");
+      }
+      q.appendChild(el);
+      if (i < packTokens.length - 1) {
+        var ar = document.createElement("span");
+        ar.textContent = "→";
+        ar.style.color = "#8a7a5c";
+        q.appendChild(ar);
+      }
+    });
+    var slots = $("pack-slots");
+    slots.innerHTML = "";
+    $("pack-cap").textContent = packAtt ? "包（有 attention：全班同时清楚）" : "包（没有它：越早的越糊）";
+    if (packAtt) {
+      packTokens.forEach(function (w) {
+        slots.appendChild(makeSlot(w, "clear", "清楚"));
+      });
+      return;
+    }
+    var seen = packTokens.slice(0, packStep);
+    var newest = seen.slice().reverse();
+    var labels = ["清楚", "有点糊", "糊"];
+    var cls = ["clear", "mid", "smear"];
+    newest.slice(0, 3).forEach(function (w, i) {
+      slots.appendChild(makeSlot(w, cls[i], labels[i]));
+    });
+    if (newest.length > 3) {
+      var gone = document.createElement("div");
+      gone.className = "slot smear";
+      gone.innerHTML = "<div class=\"lab\">挤没了</div>" + escapeHtml(newest.slice(3).join("、"));
+      slots.appendChild(gone);
+    }
+  }
+
+  function makeSlot(w, cls, lab) {
+    var d = document.createElement("div");
+    d.className = "slot " + cls;
+    d.innerHTML = "<div class=\"lab\">" + lab + "</div><strong>" + escapeHtml(w) + "</strong>";
+    return d;
+  }
+
+  function packExport() {
+    if (!packTokens.length) {
+      toast("pack-toast", "先写一列词。");
+      return;
+    }
+    var chain = packTokens.join(" -> ");
+    var seen = packTokens.slice(0, packStep);
+    var newest = seen.slice().reverse();
+    var packLines = [];
+    var labels = ["清楚", "有点糊", "糊"];
+    newest.slice(0, 3).forEach(function (w, i) {
+      packLines.push("  [" + w + "] " + labels[i]);
+    });
+    if (newest.length > 3) {
+      packLines.push("  更早的词已被挤掉：" + newest.slice(3).join("、"));
+    }
+    var clearWord = newest[0] || packTokens[packTokens.length - 1];
+    var smeared = newest[2] || newest[newest.length - 1] || "";
+    var text = "## 双编码\n\n";
+    text += "没有它（排队）第 " + packStep + " 步：\n";
+    text += chain + "\n";
+    text += "包：\n" + packLines.join("\n") + "\n";
+    text += "第" + packStep + "步包里最清楚的是 " + clearWord;
+    if (smeared && smeared !== clearWord) text += "，" + smeared + " 已被挤糊";
+    text += "。\n\n";
+    text += "有它（attention）：\n";
+    text += packTokens.join("  ") + "\n";
+    text += "全班同时看得见，没有挤。\n";
+    copyText(text, "pack-toast", "pack-preview");
+  }
+
+  $("pack-apply").addEventListener("click", setPackTokens);
+  $("pack-prev").addEventListener("click", function () { packStep -= 1; renderPack(); });
+  $("pack-next").addEventListener("click", function () { packStep += 1; renderPack(); });
+  $("pack-mode-queue").addEventListener("click", function () {
+    packAtt = false;
+    $("pack-mode-queue").classList.add("active");
+    $("pack-mode-att").classList.remove("active");
+    renderPack();
+  });
+  $("pack-mode-att").addEventListener("click", function () {
+    packAtt = true;
+    $("pack-mode-att").classList.add("active");
+    $("pack-mode-queue").classList.remove("active");
+    renderPack();
+  });
+  $("pack-copy").addEventListener("click", packExport);
+
+  function renderMap() {
+    var wrap = $("map-boxes");
+    wrap.innerHTML = "";
+    for (var i = 1; i <= 6; i++) {
+      var box = document.createElement("div");
+      box.className = "box";
+      box.innerHTML = "<div class=\"cap\">地盘 " + i + "</div>" +
+        "<input type=\"text\" data-k=\"d\" placeholder=\"子领域\" aria-label=\"子领域 " + i + "\">" +
+        "<input type=\"text\" data-k=\"c\" placeholder=\"皇冠概念\" aria-label=\"皇冠 " + i + "\">";
+      wrap.appendChild(box);
+    }
+  }
+
+  function mapExport() {
+    var items = [];
+    document.querySelectorAll("#map-boxes .box").forEach(function (box) {
+      var d = box.querySelector('input[data-k="d"]').value.trim();
+      var c = box.querySelector('input[data-k="c"]').value.trim();
+      if (!d && !c) return;
+      items.push("- " + (d || "（未命名）") + (c ? "：" + c : ""));
+    });
+    if (!items.length) {
+      toast("map-toast", "先给至少一格写上名字。");
+      return;
+    }
+    var text = "## 领域地图\n\n" + items.join("\n") + "\n";
+    copyText(text, "map-toast", "map-preview");
+  }
+
+  $("map-copy").addEventListener("click", mapExport);
+  $("map-clear").addEventListener("click", function () {
+    renderMap();
+    toast("map-toast", "已清空。");
+    showPrev("map-preview", "");
+  });
+
+  lookWords = splitWords($("look-sentence").value);
+  renderLook();
+  setPackTokens();
+  renderMap();
+  window.addEventListener("resize", drawArrows);
+})();
+</script>
+</body>
+</html>
