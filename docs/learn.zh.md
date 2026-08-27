@@ -31,7 +31,7 @@
 gobs learn start Transformer
 gobs learn start Transformer --resume SESSION_ID
 gobs learn start Transformer --new
-gobs learn save --note 22_study/00_learn/Transformer.md --body-file CARD.md --chat-file CHAT.md
+gobs learn save --note 22_study/00_learn/Transformer.md --body-file CARD.md --chat-file LECTURE.md
 gobs learn status
 ```
 
