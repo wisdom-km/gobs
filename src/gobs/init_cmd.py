@@ -30,12 +30,20 @@ from gobs.constants import (
 from gobs.learn import learn_dir as resolve_learn_dir
 
 
-def _template_file(*parts: str) -> str:
+def _templates_root() -> Path:
+    return Path(__file__).resolve().parent / "templates"
+
+
+def _template_bytes(*parts: str) -> bytes:
+    """Read package data as bytes (html + md). importlib.files first, else disk."""
     try:
-        return files("gobs.templates").joinpath(*parts).read_text(encoding="utf-8")
-    except (FileNotFoundError, ModuleNotFoundError, TypeError):
-        root = Path(__file__).resolve().parent / "templates"
-        return root.joinpath(*parts).read_text(encoding="utf-8")
+        return files("gobs.templates").joinpath(*parts).read_bytes()
+    except (FileNotFoundError, ModuleNotFoundError, TypeError, AttributeError, IsADirectoryError):
+        return _templates_root().joinpath(*parts).read_bytes()
+
+
+def _template_file(*parts: str) -> str:
+    return _template_bytes(*parts).decode("utf-8")
 
 
 def _template(name: str) -> str:
@@ -76,9 +84,9 @@ def install_viz(vault: Path) -> dict[str, str]:
     actions: dict[str, str] = {}
     for name in VIZ_FILES:
         dest = dest_dir / name
-        text = _template_file("viz", name)
+        data = _template_bytes("viz", name)
         existed = dest.exists()
-        dest.write_text(text, encoding="utf-8")
+        dest.write_bytes(data)
         actions[f"{VIZ_DIR}/{name}"] = "updated" if existed else "created"
     return actions
 

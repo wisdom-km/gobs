@@ -223,7 +223,7 @@
       var tag = "";
       if (i === source) { b.classList.add("source"); tag = "看"; }
       if (links[i] === "hi") { b.classList.add("hi"); tag = "高"; }
-      if (links[i] === "lo") { b.classList.add("lo"); tag = "低"; }
+      if (links[i] === "lo") { b.classList.add("lo"); tag = "中"; }
       b.innerHTML = escapeHtml(w) + (tag ? "<small>" + tag + "</small>" : "");
       b.addEventListener("click", function () { onLookTap(i); });
       box.appendChild(b);
@@ -293,7 +293,7 @@
       lab.setAttribute("text-anchor", "middle");
       lab.setAttribute("font-size", "12");
       lab.setAttribute("fill", "#6d6254");
-      lab.textContent = lookWords[i] + (level === "hi" ? " 高" : " 低");
+      lab.textContent = lookWords[i] + (level === "hi" ? " 高" : " 中");
       svg.appendChild(lab);
     });
   }
@@ -315,13 +315,13 @@
         lines.push("  src ==>|高| " + id);
         hi.push(w);
       } else {
-        lines.push("  src -.->|低| " + id);
+        lines.push("  src -.->|中| " + id);
         lo.push(w);
       }
     });
     var remember = [];
     if (hi.length) remember.push("只要记住：" + src + " 主要在看 " + hi.join("、") + "。");
-    if (lo.length) remember.push("只要记住：" + lo.join("、") + " 几乎没被看。");
+    if (lo.length) remember.push("只要记住：" + lo.join("、") + " 只是轻轻看一眼。");
     remember.push("只要记住：一次只盯几个字，别全亮。");
     var text = "## 双编码\n\n```mermaid\n" + lines.join("\n") + "\n```\n\n" + remember.join("\n") + "\n";
     copyText(text, "look-toast", "look-preview");
@@ -460,17 +460,20 @@
   });
   $("pack-copy").addEventListener("click", packExport);
 
+  var MAP_DEFAULTS = ["麻烦", "老办法", "attention", "分数", "同时看", "只要它"];
+
   function renderMap() {
     var wrap = $("map-boxes");
     wrap.innerHTML = "";
-    for (var i = 1; i <= 6; i++) {
+    MAP_DEFAULTS.forEach(function (label, idx) {
+      var i = idx + 1;
       var box = document.createElement("div");
       box.className = "box";
       box.innerHTML = "<div class=\"cap\">地盘 " + i + "</div>" +
-        "<input type=\"text\" data-k=\"d\" placeholder=\"子领域\" aria-label=\"子领域 " + i + "\">" +
+        "<input type=\"text\" data-k=\"d\" value=\"" + escapeHtml(label) + "\" placeholder=\"子领域\" aria-label=\"子领域 " + i + "\">" +
         "<input type=\"text\" data-k=\"c\" placeholder=\"皇冠概念\" aria-label=\"皇冠 " + i + "\">";
       wrap.appendChild(box);
-    }
+    });
   }
 
   function mapExport() {
