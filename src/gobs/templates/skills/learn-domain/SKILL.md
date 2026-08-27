@@ -2,8 +2,8 @@
 name: learn-domain
 description: >-
   更新领域卡（主题文件夹里，或 22_study/00_learn/）。学习模式下用户说「保存」「写进库」「记下来」时：
-  原文进归档并且写进领域卡，一次 `gobs learn save`。
-  「写进卡」「同步到卡」只改卡。「确认升到 L1」才升档。
+  原文进归档并且按 ## 做章节补丁，一次 `gobs learn save`。
+  「写进卡」「同步到卡」只改点名的章节。「确认升到 L1」才升档。
   开启学习请用 /learn。
 user-invocable: true
 argument-hint: "[保存|写进卡|确认升到 L1]"
@@ -17,23 +17,26 @@ argument-hint: "[保存|写进卡|确认升到 L1]"
 
 用户说 **保存**、**写进库**、**记下来**：按 `/learn` 的保存步骤。
 `--chat-file` 必须是一篇可读讲解（`##` 标题 + 正文），不是聊天 log。
-调用 `gobs learn save --note <卡片路径> --body-file CARD.md --chat-file LECTURE.md --title "领域名"`。
+`--body-file` 是章节补丁，不是整卡重写：只写当前 phase 改过的 frontmatter 和点名的 `##`。
+脏讲义（`用户：` / `助手：` / `孔明：` / `/learn`）会被拒绝。
+调用 `gobs learn save --note <卡片真实路径> --body-file CARD.md --chat-file LECTURE.md --title "领域名"`。
 不要另写 Lessons 页，不要再问「要不要同步」。
 
 ## 只改卡
 
-用户只说「写进卡」「同步到卡」：编辑已有领域卡，只改刚完成的那一块。
-四列表和回教是课后档案，按课堂上已经讲过的例子填，不要把讲稿改成提纲。
-他卡住的那一步写入「洞」，不要贴问答 log。
-保持 frontmatter：`gobs_type`、`level`、`open_door`、`status`、`session_id`。一次只一课 open。
+用户只说「写进卡」「同步到卡」：编辑已有领域卡，只改刚完成的那一个 phase。
+新卡没有四列表、没有回教。提取走 ## 提取队列（题干+due）；费曼对打在 feynman 课。
+保持 frontmatter 唯一套：`gobs_type` `title` `level` `status` `enough` `enough_who` `enough_scene` `stop` `phase` `bloom` `map_ready` `principles_n` `last_review` `next_review` `interval_days` `artifact` `known` `unknown` `next_move` `open_door` `session_id` `doors` `updated`。一次只一课 / 一个 phase open。
 
 ## 升档
 
-对照 L1 六条。只有用户说「确认升到 L1」才改 `level`。
+L0：对着地图能讲已有原理；提取失败过至少一次。
+L1：履历四件套齐；只有用户说「确认升到 L1」且 `artifact` 非空才改 `level`。
 
 ## 禁止
 
 - 把聊天原文写进领域卡
-- 未确认就升档
+- 整卡覆盖未点名的章节
+- 未确认或无 artifact 就升档
 - 学习模式下把「保存」做成只写卡、不归档原文
-- 把原文写成 `/learn` / `用户：` / `助手：` 对话 log
+- 把原文写成 `/learn` / `用户：` / `助手：` / `孔明：` 对话 log

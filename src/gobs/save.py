@@ -10,6 +10,7 @@ from pathlib import Path
 from gobs.config import load_user_config, load_vault_config, resolve_vault
 
 CITE_RE = re.compile(r"\[p(\d+)\]", re.IGNORECASE)
+SOURCE_RE = re.compile(r"^Source:\s*\[\[", re.M)
 
 
 class SaveError(ValueError):
@@ -80,6 +81,18 @@ def replace_cites(body: str, ids: list[str], wiki_base: str) -> tuple[str, int]:
     return CITE_RE.sub(repl, body), count
 
 
+def unique_transcript_path(tdir: Path, stem: str) -> Path:
+    dest = tdir / f"{stem}.md"
+    if not dest.exists():
+        return dest
+    n = 2
+    while True:
+        cand = tdir / f"{stem}-{n}.md"
+        if not cand.exists():
+            return cand
+        n += 1
+
+
 def save_note(
     *,
     note: str,
@@ -89,6 +102,7 @@ def save_note(
     title: str | None = None,
     day: str | None = None,
     lecture: bool = False,
+    phase: str | None = None,
 ) -> SaveResult:
     vault_path = resolve_vault(vault)
     cfg = load_vault_config(vault_path, load_user_config())
@@ -111,15 +125,18 @@ def save_note(
         slug = slugify(title or dest.stem)
         tdir = vault_path / cfg.transcripts
         tdir.mkdir(parents=True, exist_ok=True)
-        transcript_path = tdir / f"{iso}-{slug}.md"
         if lecture:
+            phase_slug = slugify(phase or "lesson", limit=20)
+            stem = f"{iso}-{slug}-{phase_slug}"
+            transcript_path = unique_transcript_path(tdir, stem)
             header = f"# {title or dest.stem} · {iso} 讲解\n\n"
         else:
+            transcript_path = tdir / f"{iso}-{slug}.md"
             header = f"# Transcript {iso} — {title or dest.stem}\n\n"
         transcript_path.write_text(header + md, encoding="utf-8")
         wiki = f"{cfg.transcripts}/{transcript_path.stem}".replace("\\", "/")
         text, cites = replace_cites(text, ids, wiki)
-        if cites == 0:
+        if cites == 0 and not SOURCE_RE.search(text):
             text = text.rstrip() + f"\n\nSource: [[{wiki}#^{ids[0]}]]\n"
 
     dest.write_text(text if text.endswith("\n") else text + "\n", encoding="utf-8")

@@ -90,5 +90,44 @@ class InitTests(unittest.TestCase):
             self.assertIn("gobs vault conventions", (vault / "AGENTS.md").read_text(encoding="utf-8"))
 
 
+
+    def test_init_installs_viz(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            vault = tmp / "vault"
+            vault.mkdir()
+            with patch("gobs.config.user_config_path", self._home(tmp)):
+                actions = init_vault(vault, skeleton=False, set_default=False)
+            html = vault / "80_meta" / "gobs-viz" / "draw.html"
+            note = vault / "80_meta" / "gobs-viz" / "画图.md"
+            self.assertTrue(html.is_file())
+            self.assertTrue(note.is_file())
+            self.assertEqual(actions["80_meta/gobs-viz/draw.html"], "created")
+            self.assertEqual(actions["80_meta/gobs-viz/画图.md"], "created")
+            html_text = html.read_text(encoding="utf-8")
+            note_text = note.read_text(encoding="utf-8")
+            self.assertIn("看谁", html_text)
+            self.assertIn("印象包", html_text)
+            self.assertIn("地图", html_text)
+            self.assertIn("复制到笔记", html_text)
+            self.assertIn("The animal didn't cross the street because it was too tired", html_text)
+            self.assertIn("麻烦", html_text)
+            self.assertIn("老办法", html_text)
+            self.assertIn("只要它", html_text)
+            self.assertIn("draw.html", note_text)
+            self.assertIn("双编码", note_text)
+            self.assertNotIn("四列表", html_text)
+            self.assertNotIn("回教", html_text)
+            self.assertNotIn("四列表", note_text)
+            self.assertNotIn("回教", note_text)
+            self.assertNotIn("QKV", html_text)
+            self.assertNotIn("BLEU", html_text)
+            self.assertNotIn("encoder", html_text)
+            with patch("gobs.config.user_config_path", self._home(tmp)):
+                again = init_vault(vault, skeleton=False, set_default=False)
+            self.assertEqual(again["80_meta/gobs-viz/draw.html"], "updated")
+
+
+
 if __name__ == "__main__":
     unittest.main()

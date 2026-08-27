@@ -113,9 +113,9 @@ def _parser() -> argparse.ArgumentParser:
     learn_save.add_argument(
         "--note",
         required=True,
-        help="Vault-relative domain card path (22_study/00_learn/Name.md still finds a moved card)",
+        help="Vault-relative path of the existing domain card (must be the real file; no stem fallback)",
     )
-    learn_save.add_argument("--body-file", required=True, help="Full updated domain card")
+    learn_save.add_argument("--body-file", required=True, help="Domain card patch (frontmatter + named ## sections; unnamed sections are kept)")
     learn_save.add_argument(
         "--chat-file",
         required=True,
@@ -255,7 +255,7 @@ def _cmd_learn(ns: argparse.Namespace) -> int:
     if ns.learn_cmd != "start":
         print(
             "usage: gobs learn start <名称> | gobs learn status | "
-            "gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file CHAT.md",
+            "gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file LECTURE.md",
             file=sys.stderr,
         )
         return 2
@@ -293,7 +293,11 @@ def _cmd_learn(ns: argparse.Namespace) -> int:
         new_session=not is_resume,
         resume_id=resume_id,
         boot_prompt=boot_prompt(
-            rel.as_posix(), title, resume=is_resume, level=level
+            rel.as_posix(),
+            title,
+            resume=is_resume,
+            level=level,
+            phase=card.phase if card else "enough",
         ),
         learn_note=rel.as_posix(),
     )

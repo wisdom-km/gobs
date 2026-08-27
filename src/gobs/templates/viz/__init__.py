@@ -1,0 +1,1 @@
+"""Offline vault drawing helpers."""

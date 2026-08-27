@@ -36,6 +36,8 @@ SKELETON_DIRS = (
 
 DEFAULT_TRANSCRIPTS = "90_archive/transcripts"
 SAVE_SKILL_NAME = "save-to-vault"
+VIZ_DIR = "80_meta/gobs-viz"
+VIZ_FILES = ("draw.html", "画图.md")
 PROTOCOL_BEGIN = "<!-- gobs:save-protocol -->"
 PROTOCOL_END = "<!-- /gobs:save-protocol -->"
 LEARN_PROTOCOL_BEGIN = "<!-- gobs:learn-protocol -->"
