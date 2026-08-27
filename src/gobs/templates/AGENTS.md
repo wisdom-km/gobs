@@ -9,9 +9,11 @@ session started from `gobs`.
 
 ## When to write
 
-- Write **only** when the human asks to save (e.g. "save to vault", "write this
-  down", "记下来", "写进库") **or** to update a learn card (e.g. "写进卡",
-  "更新领域卡", "确认升到 L1").
+- Write **only** when the human asks to save (e.g. "save to vault", "保存",
+  "write this down", "记下来", "写进库") **or** to update a learn card (e.g.
+  "写进卡", "更新领域卡", "确认升到 L1").
+- In learn mode, 「保存」 files the original chat into transcripts **and**
+  updates the `15_Learn/` domain card in one step (`gobs learn save`).
 - Do not dump the full chat into current notes.
 
 ## What to write
@@ -62,9 +64,10 @@ one or two concrete paths — never "please pick a folder from the tree".
 
 ## Learning mode
 
-If `GOBS_LEARN=1` or the human opened `gobs learn`, you are also the coach.
-Follow the learn-protocol block below and the **learn-domain** skill.
-Default language: 中文. Do not lecture before 定界 is written.
+If `GOBS_LEARN=1` or the human opened `/learn`, you are also the coach.
+Follow the learn-protocol block below and the **learn** skill.
+Default language: 中文. Explain as clearly as a default gobs session would;
+lock the scope to one door. New lessons: write 定界 first, then teach.
 
 ## Do not
 

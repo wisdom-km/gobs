@@ -20,6 +20,7 @@ from gobs.learn import (
     list_domains,
     parse_card,
     resolve_learn_vault,
+    save_learn,
 )
 from gobs.save import SaveError, save_note
 from gobs.sessions import listed_gobs_sessions, new_or_updated, pick_session, snapshot
@@ -105,6 +106,23 @@ def _parser() -> argparse.ArgumentParser:
     )
     stat_p = learn_sub.add_parser("status", help="List domain cards in 15_Learn/")
     stat_p.add_argument("--vault", help="Vault path")
+    learn_save = learn_sub.add_parser(
+        "save",
+        help="In learn mode: archive original chat and write the domain card",
+    )
+    learn_save.add_argument(
+        "--note",
+        required=True,
+        help="Vault-relative domain card, e.g. 15_Learn/Transformer.md",
+    )
+    learn_save.add_argument("--body-file", required=True, help="Full updated domain card")
+    learn_save.add_argument(
+        "--chat-file",
+        required=True,
+        help="Original conversation; required so 保存 always files 原文",
+    )
+    learn_save.add_argument("--title", help="Short title used in the transcript filename")
+    learn_save.add_argument("--vault", help="Vault path")
     return p
 
 
@@ -211,13 +229,35 @@ def _pick_learn_session(
     return None, False
 
 
+def _cmd_learn_save(ns: argparse.Namespace) -> int:
+    body = Path(ns.body_file).read_text(encoding="utf-8")
+    chat = Path(ns.chat_file).read_text(encoding="utf-8")
+    result = save_learn(
+        note=ns.note,
+        body=body,
+        chat=chat,
+        vault=Path(ns.vault) if ns.vault else None,
+        title=ns.title,
+    )
+    print(f"gobs: wrote {result.note}")
+    if result.transcript:
+        print(f"gobs: transcript {result.transcript} ({result.cites} paragraph links)")
+    return 0
+
+
 def _cmd_learn(ns: argparse.Namespace) -> int:
     if ns.learn_cmd == "status":
         vault = resolve_learn_vault(Path(ns.vault) if ns.vault else None)
         print(format_status(list_domains(vault)))
         return 0
+    if ns.learn_cmd == "save":
+        return _cmd_learn_save(ns)
     if ns.learn_cmd != "start":
-        print("usage: gobs learn start <名称> | gobs learn status", file=sys.stderr)
+        print(
+            "usage: gobs learn start <名称> | gobs learn status | "
+            "gobs learn save --note 15_Learn/NAME.md --body-file CARD.md --chat-file CHAT.md",
+            file=sys.stderr,
+        )
         return 2
     vault = resolve_learn_vault(Path(ns.vault) if ns.vault else None)
     rel, action = create_domain(vault, ns.name)

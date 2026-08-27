@@ -49,6 +49,7 @@ gobs sessions
 ```
 
 在 Grok 里对着库聊、一起读讲解、改现行页，都是普通对话。**保存是另说一句。**
+想上课时在同一会话里输入 `/learn`（不必退出）。学习模式下说 **保存**：原文进归档，同时写进 `15_Learn/` 领域卡。
 
 ### 保存（精华）
 
@@ -81,6 +82,7 @@ gobs --new
 gobs --resume ID
 gobs init [vault] [--skeleton] [--force-agents]
 gobs save --note 相对路径.md --body-file FILE [--chat-file FILE] [--title NAME]
+gobs learn save --note 15_Learn/NAME.md --body-file CARD.md --chat-file CHAT.md
 gobs sessions
 gobs doctor
 gobs config vault PATH

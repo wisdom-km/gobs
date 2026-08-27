@@ -1,23 +1,28 @@
 ---
 name: learn-domain
 description: >-
-  更新 15_Learn/ 领域卡（定界、四列表、样例、回教、过关）。
-  用户说「写进卡」「同步到卡」「确认升到 L1」时使用。
-  若要**开启**学习模式，请用 /learn（不是本 skill）。
+  更新 15_Learn/ 领域卡。学习模式下用户说「保存」「写进库」「记下来」时：
+  原文进归档并且写进领域卡，一次 `gobs learn save`。
+  「写进卡」「同步到卡」只改卡。「确认升到 L1」才升档。
+  开启学习请用 /learn。
 user-invocable: true
-argument-hint: "[写进卡|确认升到 L1]"
+argument-hint: "[保存|写进卡|确认升到 L1]"
 ---
 
-# learn-domain — 只负责改卡
+# learn-domain — 改卡（保存时连同原文）
 
-**开启教练模式请用 `/learn`。** 本 skill 只在用户要改领域卡或升档时用。
+开启教练、讲解方式见 `/learn`。本 skill 只负责落盘。
 
-## 更新卡片
+## 保存（学习模式）
 
-1. 编辑 `15_Learn/` 已有卡，不另开同主题新卡。
-2. 只改刚完成的那一块。
-3. 保持 frontmatter：`gobs_type`、`level`、`open_door`、`status`、`session_id`。
-4. 一次只一扇门 open。
+用户说 **保存**、**写进库**、**记下来**：按 `/learn` 的保存步骤，调用
+`gobs learn save --note 15_Learn/<卡>.md --body-file CARD.md --chat-file CHAT.md --title "领域名"`。
+不要另写 Lessons 页，不要再问「要不要同步」。
+
+## 只改卡
+
+用户只说「写进卡」「同步到卡」：编辑已有 `15_Learn/` 卡，只改刚完成的那一块。
+保持 frontmatter：`gobs_type`、`level`、`open_door`、`status`、`session_id`。一次只一扇门 open。
 
 ## 升档
 
@@ -26,4 +31,5 @@ argument-hint: "[写进卡|确认升到 L1]"
 ## 禁止
 
 - 把聊天原文写进领域卡
-- 未确认就升档或每轮自动写库
+- 未确认就升档
+- 学习模式下把「保存」做成只写卡、不归档原文

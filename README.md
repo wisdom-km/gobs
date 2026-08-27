@@ -42,7 +42,7 @@ gobs                               # open vault, start Grok
 Empty vault, optional PARA-like skeleton: `gobs init ~/Notes/Vault --skeleton`.
 
 `gobs init` upserts save + learn protocol blocks in `AGENTS.md`, installs
-`/save-to-vault` and `/learn-domain`, and creates `15_Learn/` plus
+`/save-to-vault`, `/learn`, and `/learn-domain`, and creates `15_Learn/` plus
 `99_Archive/transcripts/` if needed.
 `--force-agents` is the only way to overwrite `AGENTS.md`.
 
@@ -66,16 +66,13 @@ normal conversation. **Saving** is a separate sentence.
 
 ### Learn mode (L0 → L1)
 
-Learning is optional. It does not replace the launcher.
+Learning is optional. The main entry is still plain `gobs`. In that session type
+`/learn` or `/learn Transformer`.
 
-```text
-gobs learn start Transformer
-gobs learn start 英语
-gobs learn status
-```
-
-This creates or opens `15_Learn/<name>.md`, then starts Grok with: do not lecture,
-write 定界 first. Promotion to L1 happens only when you say **确认升到 L1**.
+Explanations should be as accurate and plain as a normal gobs explainer, scoped
+to one door. Saying **保存** archives the original chat **and** writes the
+current block onto the `15_Learn/` domain card (`gobs learn save`). Promotion
+to L1 happens only when you say **确认升到 L1**.
 Details: [docs/learn.zh.md](docs/learn.zh.md).
 
 ### Save (current note)
@@ -117,6 +114,7 @@ gobs --resume ID
 gobs --no-open
 gobs init [vault] [--skeleton] [--force-agents]
 gobs learn start NAME [--no-launch]
+gobs learn save --note 15_Learn/NAME.md --body-file CARD.md --chat-file CHAT.md
 gobs learn status
 gobs save --note REL.md --body-file FILE [--chat-file FILE] [--title NAME]
 gobs sessions

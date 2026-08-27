@@ -10,6 +10,7 @@ from pathlib import Path
 
 from gobs.config import resolve_vault
 from gobs.constants import LEARN_DIR
+from gobs.save import SaveError, SaveResult, save_note
 
 
 class LearnError(RuntimeError):
@@ -161,6 +162,38 @@ def format_status(cards: list[DomainCard]) -> str:
     return "\n".join(lines)
 
 
+def save_learn(
+    *,
+    note: str,
+    body: str,
+    chat: str,
+    vault: Path | None = None,
+    title: str | None = None,
+    day: str | None = None,
+) -> SaveResult:
+    """Archive the original chat and write the domain card in one step."""
+    if not (chat or "").strip():
+        raise LearnError("learn save requires the original chat (原文)")
+    if "gobs_type: domain" not in body:
+        raise LearnError("learn save body must be a domain card (gobs_type: domain)")
+    rel = note.replace("\\", "/").lstrip("/")
+    prefix = f"{LEARN_DIR}/"
+    if not rel.startswith(prefix):
+        raise LearnError(f"learn save must target {prefix}, got {note}")
+    vault_path = resolve_learn_vault(vault)
+    try:
+        return save_note(
+            note=rel,
+            body=body,
+            chat=chat,
+            vault=vault_path,
+            title=title,
+            day=day,
+        )
+    except SaveError as exc:
+        raise LearnError(str(exc)) from exc
+
+
 def boot_prompt(
     rel_note: str,
     title: str,
@@ -172,23 +205,24 @@ def boot_prompt(
         f"先读领域卡 [[{rel_note.replace('.md', '')}]]（文件 {rel_note}）"
         f"和 AGENTS.md 里的学习协议。领域：{title}。档位：{level}。"
     )
+    teach = (
+        "讲解要准、要好懂：先人话和一个完整小例子，再点名术语；"
+        "公式先讲它在算什么，再对照例子写符号。一次一扇门，一次新零件不超过 3 个。"
+    )
     sync = (
-        "阶段性完成后（定界写完 / 样例讲完 / 回教四问答完），先问我："
-        "「要不要把这一块同步进领域卡？」只有我说同意或「写进卡」才改文件。"
-        "禁止每轮自动写库，禁止把聊天原文写进领域卡。"
+        "我说「保存」时：原文进归档，同时把这一块写进领域卡。"
+        "一次完成，不要拆成两步问。禁止把聊天原文写进领域卡。"
     )
     if resume:
         return (
             f"续学模式已打开。{base}"
-            "不要从头讲课。先看卡上已有内容和 open_door，从缺的那一块继续。"
-            f"{sync}"
+            "不要从头讲。先看卡上已有内容和 open_door，从缺的那一块继续。"
+            f"{teach}{sync}"
         )
     return (
         f"学习模式已打开。{base} 现在是 L0→L1。"
-        "不要讲课，不要公式，不要一次丢超过三个新零件。"
-        "先逼我写出三句定界：场景 / 够用（可检查的行为）/ 停线。"
-        "我写完你只砍过大的目标。"
-        f"{sync}"
+        "新课先定界（场景 / 够用 / 停线）；已经说清这三句就开讲，不要空问。"
+        f"{teach}{sync}"
     )
 
 

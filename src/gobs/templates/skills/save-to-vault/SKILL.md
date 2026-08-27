@@ -2,21 +2,31 @@
 name: save-to-vault
 description: >
   Save a distilled vault note (and optional paragraph-linked transcript) with
-  `gobs save`. Use when the user says 写进库, 记下来, save to vault, write this
-  down, or runs /save-to-vault. Never dump the raw chat into a current note.
+  `gobs save`. In /learn mode, 保存 archives the original chat AND updates the
+  15_Learn domain card via `gobs learn save`. Use when the user says 保存,
+  写进库, 记下来, save to vault, write this down, or runs /save-to-vault.
+  Never dump the raw chat into a current note.
 user-invocable: true
 argument-hint: "[including transcript]"
 ---
 
 # Save to vault
 
-The human asked to file this conversation. You are the archivist. Use **`gobs save`**;
-do not paste the chat into a current note yourself.
+The human asked to file this conversation. You are the archivist. Do not paste
+the chat into a current note yourself.
 
-## Steps
+## Learn mode
+
+If this session is in `/learn` (coach mode, `GOBS_LEARN=1`, or an active
+`15_Learn/` card): **保存 / 写进库 / 记下来** means both original chat into
+transcripts **and** the current block onto the domain card. Follow the
+**learn** skill and run `gobs learn save`. Do not write a separate Lessons
+page. Do not ask twice.
+
+## Steps (not in learn mode)
 
 1. Confirm they want a save. If they also said "including transcript" / 连同原文 /
-   `原文`, set `WITH_TRANSCRIPT=1`. Otherwise distilled only.
+   `原文`, set `WITH_TRANSCRIPT=1`. Otherwise distilled only. Use **`gobs save`**.
 2. Search the vault for an existing page on this topic. Prefer editing that path.
    If none, pick a path using the vault's taxonomy (or the gobs skeleton table in
    `AGENTS.md`). File automatically when sure; ask only when unsure, offering

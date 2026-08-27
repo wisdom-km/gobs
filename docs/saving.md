@@ -19,6 +19,19 @@ How this fits the rest of the app: [usage.md](usage.md) ·
 The current note is for reading. The transcript is lookup-only. Do not put
 transcript files on a home “read this today” line.
 
+### Learn mode
+
+Inside `/learn`, saying **保存** / 写进库 / 记下来 is **both** rows at once:
+the original chat goes to transcripts, and the distilled block goes onto the
+`15_Learn/` domain card. The skill must call:
+
+```bash
+gobs learn save --note 15_Learn/NAME.md --body-file CARD.md --chat-file CHAT.md --title NAME
+```
+
+`--chat-file` is required. `--note` must be under `15_Learn/`. See
+[learn.zh.md](learn.zh.md).
+
 ---
 
 ## Distilled note
