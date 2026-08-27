@@ -8,6 +8,7 @@ from pathlib import Path
 from gobs.config import (
     GobsConfig,
     load_user_config,
+    load_vault_config,
     write_user_config,
     write_vault_config,
 )
@@ -157,13 +158,15 @@ def init_vault(
     )
 
     user = load_user_config()
+    existing = load_vault_config(vault, user)
     cfg = GobsConfig(
         vault=vault,
         cli=cli or user.cli,
         mcp_url=user.mcp_url,
         open_obsidian=user.open_obsidian,
         mcp_timeout=user.mcp_timeout,
-        transcripts=user.transcripts,
+        transcripts=existing.transcripts,
+        learn=existing.learn,
     )
     write_vault_config(vault, cfg)
     actions[".gobs/config.toml"] = "updated"

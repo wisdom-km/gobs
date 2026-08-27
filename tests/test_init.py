@@ -18,6 +18,26 @@ class InitTests(unittest.TestCase):
 
         return fake
 
+    def test_init_preserves_custom_learn_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            vault = tmp / "vault"
+            vault.mkdir()
+            (vault / ".obsidian").mkdir()
+            gobs = vault / ".gobs"
+            gobs.mkdir()
+            gobs.joinpath("config.toml").write_text(
+                'learn = "22_study/00_learn"\ntranscripts = "90_archive/transcripts"\n',
+                encoding="utf-8",
+            )
+            with patch("gobs.config.user_config_path", self._home(tmp)):
+                actions = init_vault(vault, skeleton=False, set_default=False)
+            text = (vault / ".gobs" / "config.toml").read_text(encoding="utf-8")
+            self.assertIn("22_study/00_learn", text)
+            self.assertIn("90_archive/transcripts", text)
+            self.assertTrue((vault / "22_study" / "00_learn").is_dir())
+            self.assertNotIn("15_Learn", actions)
+
     def test_init_does_not_overwrite_agents(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             tmp = Path(raw)
