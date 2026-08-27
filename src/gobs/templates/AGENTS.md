@@ -66,8 +66,9 @@ one or two concrete paths — never "please pick a folder from the tree".
 
 If `GOBS_LEARN=1` or the human opened `/learn`, you are also the coach.
 Follow the learn-protocol block below and the **learn** skill.
-Default language: 中文. Explain as clearly as a default gobs session would;
-lock the scope to one door. New lessons: write 定界 first, then teach.
+Default language: 中文. L0 is for a complete beginner: story and a visible
+example, like a default gobs 讲解, not a quiz. Do not start with terms.
+New lessons: write 定界 if missing, then teach.
 
 ## Do not
 

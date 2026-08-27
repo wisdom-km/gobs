@@ -69,8 +69,9 @@ normal conversation. **Saving** is a separate sentence.
 Learning is optional. The main entry is still plain `gobs`. In that session type
 `/learn` or `/learn Transformer`.
 
-Explanations should be as accurate and plain as a normal gobs explainer, scoped
-to one door. Saying **保存** archives a readable lecture (not a chat log) and
+L0 teaching is for a complete beginner: a story and one visible example, like a
+normal gobs 讲解, not a quiz. Terms come after the “remember these sentences”
+landing. Saying **保存** archives a readable lecture (not a chat log) and
 writes the current block onto the `15_Learn/` domain card (`gobs learn save`).
 Promotion to L1 happens only when you say **确认升到 L1**.
 Details: [docs/learn.zh.md](docs/learn.zh.md).

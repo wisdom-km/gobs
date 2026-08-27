@@ -99,8 +99,9 @@ class LearnTests(unittest.TestCase):
             learn_text = learn.read_text(encoding="utf-8")
             self.assertIn("当前会话", learn_text)
             self.assertIn("gobs learn save", learn_text)
-            self.assertIn("准确", learn_text)
-            self.assertIn("通俗", learn_text)
+            self.assertIn("零基础", learn_text)
+            self.assertIn("只要记住", learn_text)
+            self.assertNotIn("一次新零件不超过 3 个", learn_text)
             self.assertIn("可读", learn_text)
             self.assertIn("聊天 log", learn_text)
             domain = vault / ".grok" / "skills" / "learn-domain" / "SKILL.md"
@@ -112,9 +113,12 @@ class LearnTests(unittest.TestCase):
         text = boot_prompt("15_Learn/Transformer.md", "Transformer")
         self.assertIn("保存", text)
         self.assertIn("原文", text)
-        self.assertIn("好懂", text)
+        self.assertIn("零基础", text)
+        self.assertIn("只要记住", text)
         self.assertIn("讲解", text)
         self.assertNotIn("不要讲课", text)
+        self.assertNotIn("要准", text)
+        self.assertNotIn("一次新零件不超过 3 个", text)
         self.assertNotIn("要不要把这一块同步", text)
 
     def test_save_learn_writes_card_and_transcript(self) -> None:
