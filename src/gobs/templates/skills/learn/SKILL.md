@@ -26,6 +26,8 @@ argument-hint: "[领域名，如 Transformer 或 英语]"
    gobs learn start "领域名" --no-launch
    ```
 
+   记下它打印的卡片相对路径。卡可能在主题文件夹里，不一定在 `15_Learn/`。
+
 3. **切换角色**
    - 读该领域卡和 `AGENTS.md` 学习协议。
    - 新课（卡几乎是空的）：若还没有定界，用对方的话记下场景 / 够用 / 停线。已经说清就不要再逼问，直接开讲。
@@ -59,7 +61,7 @@ argument-hint: "[领域名，如 Transformer 或 英语]"
    - 卡片里不要贴聊天 log。然后一次调用：
 
    ```bash
-   gobs learn save --note 15_Learn/<卡文件>.md --body-file CARD.md --chat-file LECTURE.md --title "领域名"
+   gobs learn save --note <start打印的卡片路径> --body-file CARD.md --chat-file LECTURE.md --title "领域名"
    ```
 
    - `--chat-file` 里放讲解正文，例如：

@@ -14,6 +14,7 @@ from gobs.learn import (  # noqa: E402
     boot_prompt,
     create_domain,
     list_domains,
+    find_domain,
     parse_card,
     prepare_lecture,
     save_learn,
@@ -52,6 +53,38 @@ class LearnTests(unittest.TestCase):
             self.assertEqual(action2, "exists")
             cards = list_domains(vault)
             self.assertEqual(len(cards), 1)
+
+    def test_find_domain_outside_learn_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            vault = tmp / "vault"
+            vault.mkdir()
+            with patch("gobs.config.user_config_path", self._home(tmp)):
+                init_vault(vault, skeleton=False, set_default=False)
+            rel, _ = create_domain(vault, "Transformer")
+            dest_dir = vault / "20_Areas" / "学习" / "论文" / "Attention Is All You Need"
+            dest_dir.mkdir(parents=True)
+            dest = dest_dir / "Transformer.md"
+            (vault / rel).rename(dest)
+            found = find_domain(vault, "Transformer")
+            assert found is not None
+            self.assertEqual(
+                found.resolve().relative_to(vault.resolve()).as_posix(),
+                dest.relative_to(vault).as_posix().replace("\\", "/"),
+            )
+            rel2, action = create_domain(vault, "Transformer")
+            self.assertEqual(action, "exists")
+            self.assertFalse((vault / "15_Learn" / "Transformer.md").exists())
+            body = dest.read_text(encoding="utf-8")
+            result = save_learn(
+                note="15_Learn/Transformer.md",
+                body=body,
+                chat="## 盯\n\n排队取消。",
+                vault=vault,
+                title="Transformer",
+                day="20260828",
+            )
+            self.assertEqual(result.note.resolve(), dest.resolve())
 
     def test_bind_session(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -93,7 +126,7 @@ class LearnTests(unittest.TestCase):
             self.assertIn("gobs:learn-protocol", agents)
             self.assertIn("/learn", agents)
             self.assertIn("gobs learn save", agents)
-            self.assertIn("原文进", agents)
+            self.assertIn("领域卡", agents)
             learn = vault / ".grok" / "skills" / "learn" / "SKILL.md"
             self.assertTrue(learn.is_file())
             learn_text = learn.read_text(encoding="utf-8")

@@ -104,7 +104,7 @@ def _parser() -> argparse.ArgumentParser:
         metavar="ID",
         help="Resume this gobs/Grok session under learn mode",
     )
-    stat_p = learn_sub.add_parser("status", help="List domain cards in 15_Learn/")
+    stat_p = learn_sub.add_parser("status", help="List domain cards in the vault")
     stat_p.add_argument("--vault", help="Vault path")
     learn_save = learn_sub.add_parser(
         "save",
@@ -113,7 +113,7 @@ def _parser() -> argparse.ArgumentParser:
     learn_save.add_argument(
         "--note",
         required=True,
-        help="Vault-relative domain card, e.g. 15_Learn/Transformer.md",
+        help="Vault-relative domain card path (15_Learn/Name.md still finds a moved card)",
     )
     learn_save.add_argument("--body-file", required=True, help="Full updated domain card")
     learn_save.add_argument(

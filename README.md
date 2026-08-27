@@ -72,7 +72,7 @@ Learning is optional. The main entry is still plain `gobs`. In that session type
 L0 teaching is for a complete beginner: a story and one visible example, like a
 normal gobs 讲解, not a quiz. Terms come after the “remember these sentences”
 landing. Saying **保存** archives a readable lecture (not a chat log) and
-writes the current block onto the `15_Learn/` domain card (`gobs learn save`).
+writes the current block onto the topic’s domain card (`gobs learn save`).
 Promotion to L1 happens only when you say **确认升到 L1**.
 Details: [docs/learn.zh.md](docs/learn.zh.md).
 

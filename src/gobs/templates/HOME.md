@@ -6,7 +6,7 @@ type: home
 # Today
 
 - (the note you should read)
-- 学习卡：`15_Learn/` 里 `status: active` 的那一张
+- 学习卡：主题文件夹里 `gobs_type: domain` 且 `status: active` 的那一张
 
 Open the vault, read this page. Folders on the left are not the daily UI.
 

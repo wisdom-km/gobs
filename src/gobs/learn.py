@@ -1,4 +1,4 @@
-"""L0→L1 domain cards under 15_Learn/."""
+"""L0→L1 domain cards (topic folder, or 15_Learn/ as fallback)."""
 
 from __future__ import annotations
 
@@ -61,12 +61,23 @@ def slugify(name: str) -> str:
     return text or "domain"
 
 
+_SKIP_DIR_NAMES = {".obsidian", ".git", ".grok", ".trash", "node_modules"}
+
+
 def learn_dir(vault: Path) -> Path:
     return vault / LEARN_DIR
 
 
 def domain_path(vault: Path, name: str) -> Path:
     return learn_dir(vault) / f"{slugify(name)}.md"
+
+
+def _iter_md(vault: Path):
+    root = vault.resolve()
+    for path in root.rglob("*.md"):
+        if any(part in _SKIP_DIR_NAMES for part in path.relative_to(root).parts):
+            continue
+        yield path
 
 
 @dataclass
@@ -89,7 +100,7 @@ def parse_card(path: Path, vault: Path) -> DomainCard | None:
     text = path.read_text(encoding="utf-8")
     m = _FRONT.match(text)
     block = m.group(1) if m else ""
-    if "gobs_type: domain" not in block and "gobs_type: domain" not in text:
+    if "gobs_type: domain" not in block:
         return None
     title = _TITLE.search(block) or _TITLE.search(text)
     level = _LEVEL.search(block) or _LEVEL.search(text)
@@ -111,15 +122,35 @@ def parse_card(path: Path, vault: Path) -> DomainCard | None:
 
 
 def list_domains(vault: Path) -> list[DomainCard]:
-    folder = learn_dir(vault)
-    if not folder.is_dir():
-        return []
     cards: list[DomainCard] = []
-    for path in sorted(folder.glob("*.md")):
+    seen: set[Path] = set()
+    for path in _iter_md(vault):
         card = parse_card(path, vault)
-        if card:
-            cards.append(card)
+        if not card:
+            continue
+        key = (vault / card.path).resolve()
+        if key in seen:
+            continue
+        seen.add(key)
+        cards.append(card)
+    cards.sort(key=lambda c: c.path.as_posix())
     return cards
+
+
+def find_domain(vault: Path, name: str) -> Path | None:
+    """Locate a domain card by title or filename, anywhere in the vault."""
+    slug = slugify(name)
+    preferred = domain_path(vault, name)
+    if preferred.is_file() and parse_card(preferred, vault):
+        return preferred
+    want = name.strip()
+    for path in _iter_md(vault):
+        card = parse_card(path, vault)
+        if not card:
+            continue
+        if card.title == want or path.stem == slug:
+            return path
+    return None
 
 
 def ensure_learn_dir(vault: Path) -> Path:
@@ -129,11 +160,16 @@ def ensure_learn_dir(vault: Path) -> Path:
 
 
 def create_domain(vault: Path, name: str) -> tuple[Path, str]:
-    """Create a domain card if missing. Returns (relative path, created|exists)."""
+    """Create a domain card if missing. Returns (relative path, created|exists).
+
+    New cards still land in 15_Learn/. If a card with this title already
+    lives next to a topic (e.g. a paper folder), reuse that file.
+    """
+    existing = find_domain(vault, name)
+    if existing is not None:
+        return existing.resolve().relative_to(vault.resolve()), "exists"
     ensure_learn_dir(vault)
     dest = domain_path(vault, name)
-    if dest.exists():
-        return dest.resolve().relative_to(vault.resolve()), "exists"
     title = name.strip() or dest.stem
     body = _template_file("domain.md").replace("{{title}}", title)
     body = body.replace("updated:", f"updated: {date.today().isoformat()}")
@@ -171,7 +207,7 @@ def bind_session(vault: Path, rel: Path | str, session_id: str) -> None:
 
 def format_status(cards: list[DomainCard]) -> str:
     if not cards:
-        return "15_Learn/ 里还没有领域卡。用 gobs learn start <名称> 开一张。"
+        return "还没有领域卡。用 gobs learn start <名称> 开一张。"
     lines = []
     for card in cards:
         sid = card.session_id or "-"
@@ -213,6 +249,18 @@ def prepare_lecture(text: str) -> list[str]:
     return out
 
 
+def resolve_learn_note(vault: Path, note: str) -> str:
+    """Accept 15_Learn/Name.md or a moved card found by title/filename."""
+    rel = note.replace("\\", "/").lstrip("/")
+    dest = vault / rel
+    if dest.is_file() and parse_card(dest, vault) is not None:
+        return dest.resolve().relative_to(vault.resolve()).as_posix()
+    found = find_domain(vault, Path(rel).stem)
+    if found is not None:
+        return found.resolve().relative_to(vault.resolve()).as_posix()
+    raise LearnError(f"learn save must target an existing domain card, got {note}")
+
+
 def save_learn(
     *,
     note: str,
@@ -227,14 +275,11 @@ def save_learn(
         raise LearnError("learn save requires the lecture text (原文)")
     if "gobs_type: domain" not in body:
         raise LearnError("learn save body must be a domain card (gobs_type: domain)")
-    rel = note.replace("\\", "/").lstrip("/")
-    prefix = f"{LEARN_DIR}/"
-    if not rel.startswith(prefix):
-        raise LearnError(f"learn save must target {prefix}, got {note}")
     lecture = "\n\n".join(prepare_lecture(chat))
     if not lecture.strip():
         raise LearnError("learn save 原文 is empty after removing protocol lines")
     vault_path = resolve_learn_vault(vault)
+    rel = resolve_learn_note(vault_path, note)
     try:
         return save_note(
             note=rel,

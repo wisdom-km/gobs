@@ -2,8 +2,8 @@
 name: save-to-vault
 description: >
   Save a distilled vault note (and optional paragraph-linked transcript) with
-  `gobs save`. In /learn mode, 保存 archives the original chat AND updates the
-  15_Learn domain card via `gobs learn save`. Use when the user says 保存,
+  `gobs save`. In /learn mode, 保存 archives a readable lecture AND updates the
+  topic’s domain card via `gobs learn save`. Use when the user says 保存,
   写进库, 记下来, save to vault, write this down, or runs /save-to-vault.
   Never dump the raw chat into a current note.
 user-invocable: true

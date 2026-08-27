@@ -12,8 +12,8 @@ session started from `gobs`.
 - Write **only** when the human asks to save (e.g. "save to vault", "保存",
   "write this down", "记下来", "写进库") **or** to update a learn card (e.g.
   "写进卡", "更新领域卡", "确认升到 L1").
-- In learn mode, 「保存」 files a readable lecture (not a chat log) into
-  transcripts **and** updates the `15_Learn/` domain card (`gobs learn save`).
+- In learn mode, 「保存」 files a readable lecture (not a chat log) **and**
+  updates the domain card next to that topic (`gobs learn save`).
 - Do not dump the full chat into current notes.
 
 ## What to write
@@ -48,7 +48,7 @@ If this vault uses the optional gobs skeleton:
 | --- | --- |
 | Unclear | `00_Inbox/` |
 | It will end | `10_Projects/` |
-| L0→L1 领域卡 | `15_Learn/` |
+| L0→L1 领域卡 | 跟主题文件夹（没有主题夹才用 `15_Learn/`） |
 | It will not end | `20_Areas/` |
 | Still true across projects | `30_Lessons/` |
 | Reusable prompt | `40_Prompts/` |
@@ -56,8 +56,8 @@ If this vault uses the optional gobs skeleton:
 | Vault mechanics | `90_Meta/` |
 | Transcripts / cold notes | `99_Archive/` |
 
-If the vault has its own taxonomy, **follow that** instead — except domain cards
-from `gobs learn`, which stay in `15_Learn/`.
+If the vault has its own taxonomy, **follow that** instead. Put a learn card in
+the topic folder when one exists; otherwise `15_Learn/` is the fallback.
 
 File automatically when the path is clear. Ask only when unsure, and then offer
 one or two concrete paths — never "please pick a folder from the tree".

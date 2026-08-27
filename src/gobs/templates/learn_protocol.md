@@ -11,16 +11,16 @@
 
 说 **保存**、**写进库**、**记下来**：一次完成
 
-1. 原文进 `99_Archive/transcripts/`——写成一篇可读讲解（像默认 gobs 讲解），不是聊天 log
-2. 刚完成的一块写进 `15_Learn/` 领域卡
+1. 原文写成一篇可读讲解（像默认 gobs 讲解），不是聊天 log
+2. 刚完成的一块写进**该主题文件夹里的领域卡**（没有主题夹才用 `15_Learn/`）
 
-调用 `gobs learn save`。`--chat-file` 是讲解正文。不要拆成两步。卡片和原文里都不要贴 `/learn` 对话 log。
+调用 `gobs learn save --note` 用 `gobs learn start` 打印的卡片路径。不要拆成两步。卡片和原文里都不要贴 `/learn` 对话 log。
 
 ### CLI（可选，不是主路径）
 
 - `gobs learn start NAME`：终端一键建卡 + 启动/续 session
 - `gobs learn start NAME --no-launch`：只建卡（`/learn` skill 内部会调）
-- `gobs learn save --note 15_Learn/NAME.md --body-file CARD.md --chat-file CHAT.md`
+- `gobs learn save --note 卡片路径.md --body-file CARD.md --chat-file LECTURE.md`
 - `gobs learn status`：看档位与 session_id
 
 ### 档位

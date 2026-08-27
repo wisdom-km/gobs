@@ -1,7 +1,7 @@
 ---
 name: learn-domain
 description: >-
-  更新 15_Learn/ 领域卡。学习模式下用户说「保存」「写进库」「记下来」时：
+  更新领域卡（主题文件夹里，或 15_Learn/）。学习模式下用户说「保存」「写进库」「记下来」时：
   原文进归档并且写进领域卡，一次 `gobs learn save`。
   「写进卡」「同步到卡」只改卡。「确认升到 L1」才升档。
   开启学习请用 /learn。
@@ -17,12 +17,12 @@ argument-hint: "[保存|写进卡|确认升到 L1]"
 
 用户说 **保存**、**写进库**、**记下来**：按 `/learn` 的保存步骤。
 `--chat-file` 必须是一篇可读讲解（`##` 标题 + 正文），不是聊天 log。
-调用 `gobs learn save --note 15_Learn/<卡>.md --body-file CARD.md --chat-file LECTURE.md --title "领域名"`。
+调用 `gobs learn save --note <卡片路径> --body-file CARD.md --chat-file LECTURE.md --title "领域名"`。
 不要另写 Lessons 页，不要再问「要不要同步」。
 
 ## 只改卡
 
-用户只说「写进卡」「同步到卡」：编辑已有 `15_Learn/` 卡，只改刚完成的那一块。
+用户只说「写进卡」「同步到卡」：编辑已有领域卡，只改刚完成的那一块。
 四列表和回教是课后档案，按课堂上已经讲过的例子填，不要把讲稿改成提纲。
 保持 frontmatter：`gobs_type`、`level`、`open_door`、`status`、`session_id`。一次只一课 open。
 
