@@ -12,6 +12,7 @@ from gobs.constants import (
     DEFAULT_MCP_TIMEOUT,
     DEFAULT_MCP_URL,
     DEFAULT_TRANSCRIPTS,
+    LEARN_DIR,
     OBS_MARKER,
     user_config_path,
     vault_config_path,
@@ -31,6 +32,7 @@ class GobsConfig:
     open_obsidian: bool = True
     mcp_timeout: int = DEFAULT_MCP_TIMEOUT
     transcripts: str = DEFAULT_TRANSCRIPTS
+    learn: str = LEARN_DIR
 
 
 def _read_toml(path: Path) -> dict[str, Any]:
@@ -54,6 +56,7 @@ def _apply(base: GobsConfig, data: dict[str, Any], *, relative_to: Path | None =
     transcripts = (
         str(data["transcripts"]).strip() if data.get("transcripts") else base.transcripts
     )
+    learn = str(data["learn"]).strip() if data.get("learn") else base.learn
     open_obsidian = (
         bool(data["open_obsidian"]) if "open_obsidian" in data else base.open_obsidian
     )
@@ -71,6 +74,7 @@ def _apply(base: GobsConfig, data: dict[str, Any], *, relative_to: Path | None =
         open_obsidian=open_obsidian,
         mcp_timeout=mcp_timeout,
         transcripts=transcripts or base.transcripts,
+        learn=learn or base.learn,
     )
 
 
@@ -155,6 +159,7 @@ def write_vault_config(vault: Path, cfg: GobsConfig) -> Path:
         "cli": cfg.cli,
         "transcripts": cfg.transcripts,
         "mcp_url": cfg.mcp_url,
+        "learn": cfg.learn,
     }
     path.write_text(dump_toml(values), encoding="utf-8")
     return path

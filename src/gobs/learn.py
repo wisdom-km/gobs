@@ -8,7 +8,7 @@ from datetime import date
 from importlib.resources import files
 from pathlib import Path
 
-from gobs.config import resolve_vault
+from gobs.config import load_user_config, load_vault_config, resolve_vault
 from gobs.constants import LEARN_DIR
 from gobs.save import SaveError, SaveResult, save_note, split_paragraphs
 
@@ -65,7 +65,9 @@ _SKIP_DIR_NAMES = {".obsidian", ".git", ".grok", ".trash", "node_modules"}
 
 
 def learn_dir(vault: Path) -> Path:
-    return vault / LEARN_DIR
+    cfg = load_vault_config(vault, load_user_config())
+    rel = (cfg.learn or LEARN_DIR).replace("\\", "/").strip("/")
+    return vault / rel
 
 
 def domain_path(vault: Path, name: str) -> Path:

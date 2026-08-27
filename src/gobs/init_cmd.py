@@ -24,6 +24,7 @@ from gobs.constants import (
     SAVE_SKILL_NAME,
     SKELETON_DIRS,
 )
+from gobs.learn import learn_dir as resolve_learn_dir
 
 
 def _template_file(*parts: str) -> str:
@@ -91,15 +92,16 @@ def init_vault(
     else:
         actions[OBS_MARKER] = "skipped"
 
-    learn = vault / LEARN_DIR
+    learn = resolve_learn_dir(vault)
+    learn_rel = learn.resolve().relative_to(vault.resolve()).as_posix()
     if not learn.exists():
         learn.mkdir(parents=True, exist_ok=True)
         keep = learn / ".gitkeep"
         if not keep.exists():
             keep.write_text("", encoding="utf-8")
-        actions[LEARN_DIR] = "created"
+        actions[learn_rel] = "created"
     else:
-        actions[LEARN_DIR] = "skipped"
+        actions[learn_rel] = "skipped"
 
     if skeleton:
         for rel in SKELETON_DIRS:
