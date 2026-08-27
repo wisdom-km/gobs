@@ -24,6 +24,7 @@ argument-hint: "[保存|写进卡|确认升到 L1]"
 
 用户只说「写进卡」「同步到卡」：编辑已有领域卡，只改刚完成的那一块。
 四列表和回教是课后档案，按课堂上已经讲过的例子填，不要把讲稿改成提纲。
+他卡住的那一步写入「洞」，不要贴问答 log。
 保持 frontmatter：`gobs_type`、`level`、`open_door`、`status`、`session_id`。一次只一课 open。
 
 ## 升档
