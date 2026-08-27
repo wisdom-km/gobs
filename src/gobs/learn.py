@@ -302,17 +302,92 @@ def _find_artifact_path(text: str) -> str:
     return (m.group(1) or m.group(2) or "").strip()
 
 
+FROZEN_HEADINGS = frozenset({"四列表", "回教"})
+KEEP_NONEMPTY = frozenset(
+    {
+        "enough",
+        "enough_who",
+        "enough_scene",
+        "stop",
+        "artifact",
+        "open_door",
+        "level",
+    }
+)
+
+
+def _principle_key(line: str) -> str:
+    return re.sub(r"^(?:\d+\.|[-*])\s+", "", line.strip())
+
+
+def _principle_lines(text: str) -> list[str]:
+    return [ln.strip() for ln in (text or "").splitlines() if _PRINCIPLE_ITEM.match(ln.strip())]
+
+
+def merge_principles_section(old: str, new: str) -> str:
+    """Append new principle items. Never drop existing ones."""
+    old_items = _principle_lines(old)
+    seen = {_principle_key(x) for x in old_items}
+    added: list[str] = []
+    for ln in _principle_lines(new):
+        key = _principle_key(ln)
+        if key and key not in seen:
+            seen.add(key)
+            added.append(key)
+    if len(added) > 4:
+        raise LearnError("principles lesson can add at most 4 items")
+    if not added:
+        return old if (old or "").strip() else new
+    body = (old or "").rstrip()
+    if body and not body.endswith("\n"):
+        body += "\n"
+    start = len(old_items)
+    for i, item in enumerate(added, start=start + 1):
+        body += f"{i}. {item}\n"
+    if not body.startswith("\n"):
+        body = "\n" + body
+    if not body.endswith("\n"):
+        body += "\n"
+    return body
+
+
+def merge_front_fields(old: dict[str, str], incoming: dict[str, str]) -> dict[str, str]:
+    """Empty incoming values must not wipe protected fields."""
+    out = dict(old)
+    for key, val in incoming.items():
+        if key in KEEP_NONEMPTY and _empty(val) and not _empty(old.get(key)):
+            continue
+        out[key] = val
+    return out
+
+
 def merge_sections(old_body: str, new_body: str) -> tuple[str, list[str]]:
     """Merge by ## heading. Unnamed old sections stay. Returns (body, incoming headings)."""
     old_pre, old_secs = split_sections(old_body)
     new_pre, new_secs = split_sections(new_body)
     incoming = {h: c for h, c in new_secs}
+    frozen = [h for h in incoming if h in FROZEN_HEADINGS]
+    if frozen:
+        raise LearnError("patch must not touch " + " / ".join(frozen))
+    old_map = {h: c for h, c in old_secs}
+    if "第一性原理" in incoming:
+        if _count_principles(incoming["第一性原理"]) == 0:
+            incoming.pop("第一性原理")
+        else:
+            incoming["第一性原理"] = merge_principles_section(
+                old_map.get("第一性原理", ""), incoming["第一性原理"]
+            )
+            new_n = _count_principles(incoming["第一性原理"])
+            old_n = _count_principles(old_map.get("第一性原理", ""))
+            if new_n < old_n:
+                raise LearnError("principles section cannot shrink")
+            if new_n - old_n > 4:
+                raise LearnError("principles lesson can add at most 4 items")
     order = [h for h, _ in old_secs]
     for h, _ in new_secs:
-        if h not in order:
+        if h not in order and h in incoming:
             order.append(h)
     pre = new_pre if new_pre.strip() else old_pre
-    old_map = {h: c for h, c in old_secs}
     parts: list[str] = []
     if pre.strip():
         parts.append(pre.rstrip() + "\n\n")
@@ -353,7 +428,7 @@ def merge_card(existing: str, patch: str) -> str:
     fields = parse_front_fields(old_fm)
     if new_fm.strip():
         incoming = parse_front_fields(new_fm)
-        fields.update(incoming)
+        fields = merge_front_fields(fields, incoming)
     fields = migrate_scene(fields)
     merged_body, headings = merge_sections(old_body, new_body)
     fields = apply_derived(fields, headings, merged_body)

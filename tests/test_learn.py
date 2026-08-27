@@ -529,5 +529,165 @@ class LearnTests(unittest.TestCase):
             self.assertEqual(text.count("Source:"), 1)
 
 
+    def test_empty_frontmatter_does_not_wipe(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            vault = tmp / "vault"
+            vault.mkdir()
+            with patch("gobs.config.user_config_path", self._home(tmp)):
+                init_vault(vault, skeleton=False, set_default=False)
+                rel, _ = create_domain(vault, "Transformer")
+                save_learn(
+                    note=rel.as_posix(),
+                    body=(
+                        "---\n"
+                        "gobs_type: domain\n"
+                        "enough: 能和做翻译的人聊 attention\n"
+                        "artifact: 22_study/00_learn/toy.md\n"
+                        "level: L0\n"
+                        "---\n"
+                    ),
+                    chat="先记下产物路径。",
+                    vault=vault,
+                    title="Transformer",
+                    day="20260828",
+                )
+                save_learn(
+                    note=rel.as_posix(),
+                    body=(
+                        "---\n"
+                        "gobs_type: domain\n"
+                        "enough: \"\"\n"
+                        "enough_who: \"\"\n"
+                        "artifact: \"\"\n"
+                        "level: L0\n"
+                        "phase: retrieve\n"
+                        "---\n"
+                    ),
+                    chat="空字段不能把路径抹掉。",
+                    vault=vault,
+                    title="Transformer",
+                    day="20260828",
+                )
+            text = (vault / rel).read_text(encoding="utf-8")
+            self.assertIn("artifact: 22_study/00_learn/toy.md", text)
+            self.assertIn("enough: 能和做翻译的人聊 attention", text)
+            self.assertIn("phase: retrieve", text)
+
+    def test_principles_append_not_replace(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            vault = tmp / "vault"
+            vault.mkdir()
+            with patch("gobs.config.user_config_path", self._home(tmp)):
+                init_vault(vault, skeleton=False, set_default=False)
+                rel, _ = create_domain(vault, "Transformer")
+                save_learn(
+                    note=rel.as_posix(),
+                    body=(
+                        "---\ngobs_type: domain\nphase: principles\n---\n\n"
+                        "## 第一性原理\n\n"
+                        "1. attention 是按相关程度看全班\n"
+                        "2. 排队会把早先的印象包挤糊\n"
+                    ),
+                    chat="先记下两条原理。",
+                    vault=vault,
+                    title="Transformer",
+                    day="20260828",
+                )
+                save_learn(
+                    note=rel.as_posix(),
+                    body=(
+                        "---\ngobs_type: domain\nphase: principles\n---\n\n"
+                        "## 第一性原理\n\n"
+                        "1. 只靠 attention 就够做翻译\n"
+                        "2. 分数接近就会把意思拧了\n"
+                    ),
+                    chat="再补两条，旧的还在。",
+                    vault=vault,
+                    title="Transformer",
+                    day="20260829",
+                )
+            text = (vault / rel).read_text(encoding="utf-8")
+            self.assertIn("attention 是按相关程度看全班", text)
+            self.assertIn("排队会把早先的印象包挤糊", text)
+            self.assertIn("只靠 attention 就够做翻译", text)
+            self.assertIn("分数接近就会把意思拧了", text)
+            self.assertIn("principles_n: 4", text)
+
+    def test_principles_add_more_than_four_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            vault = tmp / "vault"
+            vault.mkdir()
+            with patch("gobs.config.user_config_path", self._home(tmp)):
+                init_vault(vault, skeleton=False, set_default=False)
+                rel, _ = create_domain(vault, "Transformer")
+                save_learn(
+                    note=rel.as_posix(),
+                    body=(
+                        "---\ngobs_type: domain\nphase: principles\n---\n\n"
+                        "## 第一性原理\n\n1. 已有一条\n"
+                    ),
+                    chat="卡上先有一条。",
+                    vault=vault,
+                    title="Transformer",
+                    day="20260828",
+                )
+                with self.assertRaises(LearnError) as ctx:
+                    save_learn(
+                        note=rel.as_posix(),
+                        body=(
+                            "---\ngobs_type: domain\nphase: principles\n---\n\n"
+                            "## 第一性原理\n\n"
+                            "1. 新一\n2. 新二\n3. 新三\n4. 新四\n5. 新五\n"
+                        ),
+                        chat="一次不能上五条。",
+                        vault=vault,
+                        title="Transformer",
+                    )
+            self.assertIn("at most 4", str(ctx.exception))
+
+    def test_frozen_headings_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            vault = tmp / "vault"
+            vault.mkdir()
+            with patch("gobs.config.user_config_path", self._home(tmp)):
+                init_vault(vault, skeleton=False, set_default=False)
+                rel, _ = create_domain(vault, "Transformer")
+                original = (vault / rel).read_text(encoding="utf-8")
+                # leftover appendix on an old card must survive a normal patch
+                (vault / rel).write_text(
+                    original + "\n## 四列表\n\n| 列 | 大白话 |\n",
+                    encoding="utf-8",
+                )
+                save_learn(
+                    note=rel.as_posix(),
+                    body=(
+                        "---\ngobs_type: domain\nphase: map\n---\n\n"
+                        "## 领域地图\n\n- 表征\n- 目标函数\n"
+                    ),
+                    chat="只改地图。",
+                    vault=vault,
+                    title="Transformer",
+                    day="20260828",
+                )
+                text = (vault / rel).read_text(encoding="utf-8")
+                self.assertIn("## 四列表", text)
+                with self.assertRaises(LearnError) as ctx:
+                    save_learn(
+                        note=rel.as_posix(),
+                        body=(
+                            "---\ngobs_type: domain\n---\n\n"
+                            "## 四列表\n\n被改写了\n"
+                        ),
+                        chat="不能碰四列表。",
+                        vault=vault,
+                    )
+            self.assertIn("must not touch", str(ctx.exception))
+            self.assertIn("四列表", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
