@@ -10,7 +10,27 @@ from pathlib import Path
 
 from gobs.config import resolve_vault
 from gobs.constants import LEARN_DIR
-from gobs.save import SaveError, SaveResult, save_note
+from gobs.save import SaveError, SaveResult, save_note, split_paragraphs
+
+_NOISE_EXACT = re.compile(
+    r"^(?:"
+    r"/[\w-]+(?:\s+\S+)*"
+    r"|保存|写进库|记下来|save(?:\s+to\s+vault)?"
+    r"|/save-to-vault(?:\s+\S+)*"
+    r")\s*$",
+    re.I,
+)
+_NOISE_START = re.compile(
+    r"^(?:"
+    r"学哪个领域"
+    r"|课开了"
+    r"|领域卡在"
+    r"|学习模式已打开"
+    r"|续学模式已打开"
+    r")",
+)
+_ASSIST = re.compile(r"^(?:助手|助理|Assistant|Grok)\s*[：:]\s*", re.I)
+_USER = re.compile(r"^(?:用户|User|孔明)\s*[：:]\s*", re.I)
 
 
 class LearnError(RuntimeError):
@@ -162,6 +182,37 @@ def format_status(cards: list[DomainCard]) -> str:
     return "\n".join(lines)
 
 
+def is_protocol_noise(text: str) -> bool:
+    line = text.strip()
+    if not line:
+        return True
+    if _NOISE_EXACT.match(line):
+        return True
+    return bool(_NOISE_START.match(line))
+
+
+def prepare_lecture(text: str) -> list[str]:
+    """Turn a learn-save payload into readable 讲解 paragraphs.
+
+    Drops slash-command / 保存 / 开课 protocol lines. Strips 助手： labels.
+    A well-written 讲解 passes through unchanged.
+    """
+    out: list[str] = []
+    for para in split_paragraphs(text):
+        if _ASSIST.match(para):
+            para = _ASSIST.sub("", para).strip()
+        elif _USER.match(para):
+            rest = _USER.sub("", para).strip()
+            if is_protocol_noise(rest) or len(rest) < 8:
+                continue
+            para = f"> {rest}"
+        if is_protocol_noise(para):
+            continue
+        if para:
+            out.append(para)
+    return out
+
+
 def save_learn(
     *,
     note: str,
@@ -171,24 +222,28 @@ def save_learn(
     title: str | None = None,
     day: str | None = None,
 ) -> SaveResult:
-    """Archive the original chat and write the domain card in one step."""
+    """Archive a readable lecture and write the domain card in one step."""
     if not (chat or "").strip():
-        raise LearnError("learn save requires the original chat (原文)")
+        raise LearnError("learn save requires the lecture text (原文)")
     if "gobs_type: domain" not in body:
         raise LearnError("learn save body must be a domain card (gobs_type: domain)")
     rel = note.replace("\\", "/").lstrip("/")
     prefix = f"{LEARN_DIR}/"
     if not rel.startswith(prefix):
         raise LearnError(f"learn save must target {prefix}, got {note}")
+    lecture = "\n\n".join(prepare_lecture(chat))
+    if not lecture.strip():
+        raise LearnError("learn save 原文 is empty after removing protocol lines")
     vault_path = resolve_learn_vault(vault)
     try:
         return save_note(
             note=rel,
             body=body,
-            chat=chat,
+            chat=lecture,
             vault=vault_path,
             title=title,
             day=day,
+            lecture=True,
         )
     except SaveError as exc:
         raise LearnError(str(exc)) from exc
@@ -210,8 +265,8 @@ def boot_prompt(
         "公式先讲它在算什么，再对照例子写符号。一次一扇门，一次新零件不超过 3 个。"
     )
     sync = (
-        "我说「保存」时：原文进归档，同时把这一块写进领域卡。"
-        "一次完成，不要拆成两步问。禁止把聊天原文写进领域卡。"
+        "我说「保存」时：把这次课写成一篇可读讲解进归档（像默认 gobs 讲解，不要聊天 log），"
+        "同时把这一块写进领域卡。一次完成。禁止把对话 log 写进领域卡或原文。"
     )
     if resume:
         return (

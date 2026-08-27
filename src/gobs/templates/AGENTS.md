@@ -12,8 +12,8 @@ session started from `gobs`.
 - Write **only** when the human asks to save (e.g. "save to vault", "保存",
   "write this down", "记下来", "写进库") **or** to update a learn card (e.g.
   "写进卡", "更新领域卡", "确认升到 L1").
-- In learn mode, 「保存」 files the original chat into transcripts **and**
-  updates the `15_Learn/` domain card in one step (`gobs learn save`).
+- In learn mode, 「保存」 files a readable lecture (not a chat log) into
+  transcripts **and** updates the `15_Learn/` domain card (`gobs learn save`).
 - Do not dump the full chat into current notes.
 
 ## What to write

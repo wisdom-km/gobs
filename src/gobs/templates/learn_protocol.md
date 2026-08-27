@@ -11,10 +11,10 @@
 
 说 **保存**、**写进库**、**记下来**：一次完成
 
-1. 原文进 `99_Archive/transcripts/`
+1. 原文进 `99_Archive/transcripts/`——写成一篇可读讲解（像默认 gobs 讲解），不是聊天 log
 2. 刚完成的一块写进 `15_Learn/` 领域卡
 
-调用 `gobs learn save`。不要拆成「先写卡」和「再归档」。卡片里不贴聊天原文。
+调用 `gobs learn save`。`--chat-file` 是讲解正文。不要拆成两步。卡片和原文里都不要贴 `/learn` 对话 log。
 
 ### CLI（可选，不是主路径）
 

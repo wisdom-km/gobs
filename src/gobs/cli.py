@@ -119,7 +119,7 @@ def _parser() -> argparse.ArgumentParser:
     learn_save.add_argument(
         "--chat-file",
         required=True,
-        help="Original conversation; required so 保存 always files 原文",
+        help="Readable lecture markdown (讲解), not a chat log",
     )
     learn_save.add_argument("--title", help="Short title used in the transcript filename")
     learn_save.add_argument("--vault", help="Vault path")

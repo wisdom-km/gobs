@@ -46,14 +46,22 @@ def slugify(title: str, limit: int = 40) -> str:
     return s[:limit].rstrip("-")
 
 
-def stamp_transcript(paragraphs: list[str], day: str) -> tuple[str, list[str]]:
+def stamp_transcript(
+    paragraphs: list[str],
+    day: str,
+    *,
+    id_on_own_line: bool = False,
+) -> tuple[str, list[str]]:
     """Return (markdown, list of block ids)."""
     ids: list[str] = []
     chunks: list[str] = []
     for i, para in enumerate(paragraphs, start=1):
         bid = f"gobs-{day}-{i}"
         ids.append(bid)
-        chunks.append(f"{para} ^{bid}")
+        if id_on_own_line:
+            chunks.append(f"{para}\n\n^{bid}")
+        else:
+            chunks.append(f"{para} ^{bid}")
     body = "\n\n".join(chunks) + "\n"
     return body, ids
 
@@ -80,6 +88,7 @@ def save_note(
     vault: Path | None = None,
     title: str | None = None,
     day: str | None = None,
+    lecture: bool = False,
 ) -> SaveResult:
     vault_path = resolve_vault(vault)
     cfg = load_vault_config(vault_path, load_user_config())
@@ -96,12 +105,17 @@ def save_note(
         paragraphs = split_paragraphs(chat)
         if not paragraphs:
             raise SaveError("transcript is empty")
-        md, ids = stamp_transcript(paragraphs, day)
+        md, ids = stamp_transcript(
+            paragraphs, day, id_on_own_line=lecture
+        )
         slug = slugify(title or dest.stem)
         tdir = vault_path / cfg.transcripts
         tdir.mkdir(parents=True, exist_ok=True)
         transcript_path = tdir / f"{iso}-{slug}.md"
-        header = f"# Transcript {iso} — {title or dest.stem}\n\n"
+        if lecture:
+            header = f"# {title or dest.stem} · {iso} 讲解\n\n"
+        else:
+            header = f"# Transcript {iso} — {title or dest.stem}\n\n"
         transcript_path.write_text(header + md, encoding="utf-8")
         wiki = f"{cfg.transcripts}/{transcript_path.stem}".replace("\\", "/")
         text, cites = replace_cites(text, ids, wiki)

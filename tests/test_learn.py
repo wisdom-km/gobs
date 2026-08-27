@@ -15,6 +15,7 @@ from gobs.learn import (  # noqa: E402
     create_domain,
     list_domains,
     parse_card,
+    prepare_lecture,
     save_learn,
     slugify,
 )
@@ -100,6 +101,8 @@ class LearnTests(unittest.TestCase):
             self.assertIn("gobs learn save", learn_text)
             self.assertIn("准确", learn_text)
             self.assertIn("通俗", learn_text)
+            self.assertIn("可读", learn_text)
+            self.assertIn("聊天 log", learn_text)
             domain = vault / ".grok" / "skills" / "learn-domain" / "SKILL.md"
             self.assertTrue(domain.is_file())
             save_skill = vault / ".grok" / "skills" / "save-to-vault" / "SKILL.md"
@@ -110,6 +113,7 @@ class LearnTests(unittest.TestCase):
         self.assertIn("保存", text)
         self.assertIn("原文", text)
         self.assertIn("好懂", text)
+        self.assertIn("讲解", text)
         self.assertNotIn("不要讲课", text)
         self.assertNotIn("要不要把这一块同步", text)
 
@@ -141,8 +145,23 @@ class LearnTests(unittest.TestCase):
             self.assertIn("#^gobs-20260828-1", card)
             self.assertIsNotNone(result.transcript)
             t = result.transcript.read_text(encoding="utf-8")  # type: ignore[union-attr]
-            self.assertIn("用户：学 attention", t)
+            self.assertIn("讲解", t)
+            self.assertNotIn("Transcript", t)
+            self.assertNotIn("用户：", t)
+            self.assertNotIn("助手：", t)
+            self.assertIn("它先算该看哪", t)
             self.assertIn("^gobs-20260828-1", t)
+
+    def test_prepare_lecture_drops_chat_log(self) -> None:
+        paras = prepare_lecture(
+            "/learn\n\n"
+            "学哪个领域？说一个名字就行。\n\n"
+            "课开了。领域卡在 15_Learn/Transformer.md\n\n"
+            "## 盯在修什么\n\n"
+            "电脑读句子的旧办法是排队。\n\n"
+            "保存"
+        )
+        self.assertEqual(paras, ["## 盯在修什么", "电脑读句子的旧办法是排队。"])
 
     def test_save_learn_requires_chat_and_learn_dir(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

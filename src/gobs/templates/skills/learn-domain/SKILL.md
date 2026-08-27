@@ -15,8 +15,9 @@ argument-hint: "[保存|写进卡|确认升到 L1]"
 
 ## 保存（学习模式）
 
-用户说 **保存**、**写进库**、**记下来**：按 `/learn` 的保存步骤，调用
-`gobs learn save --note 15_Learn/<卡>.md --body-file CARD.md --chat-file CHAT.md --title "领域名"`。
+用户说 **保存**、**写进库**、**记下来**：按 `/learn` 的保存步骤。
+`--chat-file` 必须是一篇可读讲解（`##` 标题 + 正文），不是聊天 log。
+调用 `gobs learn save --note 15_Learn/<卡>.md --body-file CARD.md --chat-file LECTURE.md --title "领域名"`。
 不要另写 Lessons 页，不要再问「要不要同步」。
 
 ## 只改卡
@@ -33,3 +34,4 @@ argument-hint: "[保存|写进卡|确认升到 L1]"
 - 把聊天原文写进领域卡
 - 未确认就升档
 - 学习模式下把「保存」做成只写卡、不归档原文
+- 把原文写成 `/learn` / `用户：` / `助手：` 对话 log

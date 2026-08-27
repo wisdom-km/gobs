@@ -22,15 +22,17 @@ transcript files on a home “read this today” line.
 ### Learn mode
 
 Inside `/learn`, saying **保存** / 写进库 / 记下来 is **both** rows at once:
-the original chat goes to transcripts, and the distilled block goes onto the
-`15_Learn/` domain card. The skill must call:
+a **readable lecture** (same bar as a default gobs 讲解 page, not a chat
+log) goes to transcripts, and the distilled block goes onto the `15_Learn/`
+domain card. The skill must call:
 
 ```bash
-gobs learn save --note 15_Learn/NAME.md --body-file CARD.md --chat-file CHAT.md --title NAME
+gobs learn save --note 15_Learn/NAME.md --body-file CARD.md --chat-file LECTURE.md --title NAME
 ```
 
-`--chat-file` is required. `--note` must be under `15_Learn/`. See
-[learn.zh.md](learn.zh.md).
+`--chat-file` is required and must be lecture markdown (`##` headings +
+body), not `/learn` / `用户：` / `助手：` turns. `--note` must be under
+`15_Learn/`. See [learn.zh.md](learn.zh.md).
 
 ---
 
