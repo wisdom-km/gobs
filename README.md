@@ -39,11 +39,11 @@ gobs doctor
 gobs                               # open vault, start Grok
 ```
 
-Empty vault, optional PARA-like skeleton: `gobs init ~/Notes/Vault --skeleton`.
+Empty vault, optional Johnny Decimal skeleton: `gobs init ~/Notes/Vault --skeleton`.
 
 `gobs init` upserts save + learn protocol blocks in `AGENTS.md`, installs
-`/save-to-vault`, `/learn`, and `/learn-domain`, and creates `15_Learn/` plus
-`99_Archive/transcripts/` if needed.
+`/save-to-vault`, `/learn`, and `/learn-domain`, and creates `22_study/00_learn/` plus
+`90_archive/transcripts/` if needed.
 `--force-agents` is the only way to overwrite `AGENTS.md`.
 
 Private rules (calendar, language, “don’t touch this folder”) stay in **your**
@@ -93,7 +93,7 @@ Say **写进库，连同原文** or **`/save-to-vault including transcript`**.
 | File | Where | For |
 | --- | --- | --- |
 | Distilled note | A current page | You read this |
-| Transcript | `99_Archive/transcripts/YYYY-MM-DD-title.md` | Lookup; not “read this today” |
+| Transcript | `90_archive/transcripts/YYYY-MM-DD-title.md` | Lookup; not “read this today” |
 
 Sentences marked `[pN]` in the distilled note become wikilinks to **that
 paragraph** in the transcript. Click in Obsidian to jump back to the original
@@ -115,7 +115,7 @@ gobs --resume ID
 gobs --no-open
 gobs init [vault] [--skeleton] [--force-agents]
 gobs learn start NAME [--no-launch]
-gobs learn save --note 15_Learn/NAME.md --body-file CARD.md --chat-file CHAT.md
+gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file CHAT.md
 gobs learn status
 gobs save --note REL.md --body-file FILE [--chat-file FILE] [--title NAME]
 gobs sessions
@@ -124,8 +124,8 @@ gobs config vault PATH
 ```
 
 ```bash
-gobs save --note 30_Lessons/idea.md --body-file distilled.md
-gobs save --note 30_Lessons/idea.md --body-file distilled.md --chat-file chat.md --title idea
+gobs save --note 30_lessons/idea.md --body-file distilled.md
+gobs save --note 30_lessons/idea.md --body-file distilled.md --chat-file chat.md --title idea
 ```
 
 `--note` is vault-relative and cannot contain `..`.

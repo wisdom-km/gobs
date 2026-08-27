@@ -26,7 +26,7 @@ argument-hint: "[领域名，如 Transformer 或 英语]"
    gobs learn start "领域名" --no-launch
    ```
 
-   记下它打印的卡片相对路径。卡可能在主题文件夹里，不一定在 `15_Learn/`。
+   记下它打印的卡片相对路径。卡可能在主题文件夹里，不一定在 `22_study/00_learn/`。
 
 3. **切换角色**
    - 读该领域卡和 `AGENTS.md` 学习协议。

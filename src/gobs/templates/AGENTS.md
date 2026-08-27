@@ -27,7 +27,7 @@ session started from `gobs`.
 ## Transcripts (optional)
 
 - If they also want the raw conversation, store it under the transcripts
-  directory (default `99_Archive/transcripts/`, or `transcripts` in
+  directory (default `90_archive/transcripts/`, or `transcripts` in
   `.gobs/config.toml`).
 - Transcript files are **not** current reading. Do not link them from a daily
   home page as the thing to open today.
@@ -38,26 +38,30 @@ session started from `gobs`.
   That original paragraph. ^gobs-20260825-1
   ```
 
-  and in the distilled note: `[[99_Archive/transcripts/2026-08-25#^gobs-20260825-1]]`
+  and in the distilled note: `[[90_archive/transcripts/2026-08-25#^gobs-20260825-1]]`
 
 ## Filing
 
-If this vault uses the optional gobs skeleton:
+If this vault uses the optional gobs skeleton (Johnny Decimal, English):
 
 | Situation | Folder |
 | --- | --- |
-| Unclear | `00_Inbox/` |
-| It will end | `10_Projects/` |
-| L0→L1 领域卡 | 跟主题文件夹（没有主题夹才用 `15_Learn/`） |
-| It will not end | `20_Areas/` |
-| Still true across projects | `30_Lessons/` |
-| Reusable prompt | `40_Prompts/` |
-| PDFs / originals | `50_Resources/` |
-| Vault mechanics | `90_Meta/` |
-| Transcripts / cold notes | `99_Archive/` |
+| Unclear | `00_inbox/` |
+| It will end | `10_projects/` |
+| Creation | `20_creation/` |
+| Metaphysics | `21_metaphysics/` |
+| Study | `22_study/` |
+| L0→L1 fallback card | topic folder, else `22_study/00_learn/` |
+| Insights | `23_insights/` |
+| Self | `24_self/` |
+| Still true across projects | `30_lessons/` |
+| Reusable prompt | `40_prompts/` |
+| PDFs / originals | `50_resources/` |
+| Vault mechanics | `80_meta/` |
+| Transcripts / cold notes | `90_archive/` |
 
 If the vault has its own taxonomy, **follow that** instead. Put a learn card in
-the topic folder when one exists; otherwise `15_Learn/` is the fallback.
+the topic folder when one exists; otherwise `22_study/00_learn/` is the fallback.
 
 File automatically when the path is clear. Ask only when unsure, and then offer
 one or two concrete paths — never "please pick a folder from the tree".

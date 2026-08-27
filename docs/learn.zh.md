@@ -16,7 +16,7 @@
 3. 模型在当前会话切成教练，并 `gobs learn start <名> --no-launch` 确保有领域卡（已有主题夹则用夹里的卡）。
 4. L0 对零基础讲：一件具体麻烦 → 例子演完 → 没有它会怎样 → 「这一课只要记住」几句人话 → 再课间确认。不要先甩术语，不要先考四问。
 5. 你说 **保存**（或 写进库 / 记下来）：一次完成
-   - 原文进 `99_Archive/transcripts/`，写成一篇可读讲解（像默认 gobs 的「Attention Is All You Need 讲解」），不是 `/learn` 对话 log
+   - 原文进 `90_archive/transcripts/`，写成一篇可读讲解（像默认 gobs 的「Attention Is All You Need 讲解」），不是 `/learn` 对话 log
    - 刚完成的一块写进该主题的领域卡
 
    内部调用 `gobs learn save`。不要拆成两步。
@@ -31,7 +31,7 @@
 gobs learn start Transformer
 gobs learn start Transformer --resume SESSION_ID
 gobs learn start Transformer --new
-gobs learn save --note 15_Learn/Transformer.md --body-file CARD.md --chat-file CHAT.md
+gobs learn save --note 22_study/00_learn/Transformer.md --body-file CARD.md --chat-file CHAT.md
 gobs learn status
 ```
 

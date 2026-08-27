@@ -45,7 +45,7 @@ class LearnTests(unittest.TestCase):
                 init_vault(vault, skeleton=True, set_default=False)
             rel, action = create_domain(vault, "Transformer")
             self.assertEqual(action, "created")
-            self.assertEqual(rel.as_posix(), "15_Learn/Transformer.md")
+            self.assertEqual(rel.as_posix(), "22_study/00_learn/Transformer.md")
             text = (vault / rel).read_text(encoding="utf-8")
             self.assertIn("gobs_type: domain", text)
             self.assertIn("session_id:", text)
@@ -62,7 +62,7 @@ class LearnTests(unittest.TestCase):
             with patch("gobs.config.user_config_path", self._home(tmp)):
                 init_vault(vault, skeleton=False, set_default=False)
             rel, _ = create_domain(vault, "Transformer")
-            dest_dir = vault / "20_Areas" / "学习" / "论文" / "Attention Is All You Need"
+            dest_dir = vault / "22_study" / "10_papers" / "Attention Is All You Need"
             dest_dir.mkdir(parents=True)
             dest = dest_dir / "Transformer.md"
             (vault / rel).rename(dest)
@@ -74,10 +74,10 @@ class LearnTests(unittest.TestCase):
             )
             rel2, action = create_domain(vault, "Transformer")
             self.assertEqual(action, "exists")
-            self.assertFalse((vault / "15_Learn" / "Transformer.md").exists())
+            self.assertFalse((vault / "22_study" / "00_learn" / "Transformer.md").exists())
             body = dest.read_text(encoding="utf-8")
             result = save_learn(
-                note="15_Learn/Transformer.md",
+                note="22_study/00_learn/Transformer.md",
                 body=body,
                 chat="## 盯\n\n排队取消。",
                 vault=vault,
@@ -113,7 +113,7 @@ class LearnTests(unittest.TestCase):
                 main(["init", str(vault), "--no-default"])
                 code = main(["learn", "start", "英语", "--vault", str(vault), "--no-launch"])
             self.assertEqual(code, 0)
-            self.assertTrue((vault / "15_Learn" / "英语.md").is_file())
+            self.assertTrue((vault / "22_study" / "00_learn" / "英语.md").is_file())
 
     def test_init_installs_learn_skills(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -121,7 +121,7 @@ class LearnTests(unittest.TestCase):
             vault = tmp / "vault"
             with patch("gobs.config.user_config_path", self._home(tmp)):
                 actions = init_vault(vault, skeleton=True, set_default=False)
-            self.assertEqual(actions["15_Learn"], "created")
+            self.assertEqual(actions["22_study/00_learn"], "created")
             agents = (vault / "AGENTS.md").read_text(encoding="utf-8")
             self.assertIn("gobs:learn-protocol", agents)
             self.assertIn("/learn", agents)
@@ -143,7 +143,7 @@ class LearnTests(unittest.TestCase):
             self.assertIn("gobs learn save", save_skill.read_text(encoding="utf-8"))
 
     def test_boot_prompt_save_and_teach(self) -> None:
-        text = boot_prompt("15_Learn/Transformer.md", "Transformer")
+        text = boot_prompt("22_study/00_learn/Transformer.md", "Transformer")
         self.assertIn("保存", text)
         self.assertIn("原文", text)
         self.assertIn("零基础", text)
@@ -193,7 +193,7 @@ class LearnTests(unittest.TestCase):
         paras = prepare_lecture(
             "/learn\n\n"
             "学哪个领域？说一个名字就行。\n\n"
-            "课开了。领域卡在 15_Learn/Transformer.md\n\n"
+            "课开了。领域卡在 22_study/00_learn/Transformer.md\n\n"
             "## 盯在修什么\n\n"
             "电脑读句子的旧办法是排队。\n\n"
             "保存"
@@ -214,7 +214,7 @@ class LearnTests(unittest.TestCase):
                     save_learn(note=rel.as_posix(), body=body, chat="  ", vault=vault)
                 with self.assertRaises(LearnError):
                     save_learn(
-                        note="30_Lessons/x.md",
+                        note="30_lessons/x.md",
                         body=body,
                         chat="hello",
                         vault=vault,
@@ -257,7 +257,7 @@ class LearnTests(unittest.TestCase):
                     ]
                 )
             self.assertEqual(code, 0)
-            self.assertTrue(any((vault / "99_Archive" / "transcripts").glob("*.md")))
+            self.assertTrue(any((vault / "90_archive" / "transcripts").glob("*.md")))
 
 
 if __name__ == "__main__":

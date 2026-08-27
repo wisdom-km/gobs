@@ -22,7 +22,7 @@ class CliTests(unittest.TestCase):
             with patch("gobs.config.user_config_path", fake):
                 code = main(["init", str(vault), "--skeleton", "--no-default"])
             self.assertEqual(code, 0)
-            self.assertTrue((vault / "00_Inbox").is_dir())
+            self.assertTrue((vault / "00_inbox").is_dir())
             self.assertTrue((vault / "AGENTS.md").is_file())
 
     def test_help(self) -> None:

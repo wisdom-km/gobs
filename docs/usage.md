@@ -52,7 +52,7 @@ gobs init "/path/to/your/vault"
 gobs doctor
 ```
 
-Empty folder, optional skeleton (`00_Inbox`, `10_Projects`, …):
+Empty folder, optional skeleton (`00_inbox`, `10_projects`, …):
 
 ```bash
 gobs init ~/Notes/Vault --skeleton
@@ -63,7 +63,7 @@ gobs init ~/Notes/Vault --skeleton
 - Upsert a `<!-- gobs:save-protocol -->` block into `AGENTS.md` (full overwrite
   only with `--force-agents`)
 - Install `.grok/skills/save-to-vault/SKILL.md` → slash command `/save-to-vault`
-- Create `99_Archive/transcripts/` if missing
+- Create `90_archive/transcripts/` if missing
 - Remember the vault in `~/.gobs/config.toml`
 
 Put **your** rules (language, calendar, “don’t touch this folder”) in
@@ -131,14 +131,19 @@ You then open the path it reports in Obsidian.
 
 | Situation | Folder |
 | --- | --- |
-| Unclear | `00_Inbox/` |
-| It will end | `10_Projects/` |
-| It will not end | `20_Areas/` |
-| Still true across projects | `30_Lessons/` |
-| Reusable prompt | `40_Prompts/` |
-| PDFs / originals | `50_Resources/` |
-| Vault mechanics | `90_Meta/` |
-| Transcripts / cold notes | `99_Archive/` |
+| Unclear | `00_inbox/` |
+| It will end | `10_projects/` |
+| Creation | `20_creation/` |
+| Metaphysics | `21_metaphysics/` |
+| Study | `22_study/` |
+| Learn fallback | `22_study/00_learn/` |
+| Insights | `23_insights/` |
+| Self | `24_self/` |
+| Still true across projects | `30_lessons/` |
+| Reusable prompt | `40_prompts/` |
+| PDFs / originals | `50_resources/` |
+| Vault mechanics | `80_meta/` |
+| Transcripts / cold notes | `90_archive/` |
 
 If the vault already has a taxonomy, the model follows **yours**.
 
@@ -158,10 +163,10 @@ Two files:
 | File | Where | Role |
 | --- | --- | --- |
 | Distilled note | A current page in your taxonomy | What you read |
-| Transcript | `99_Archive/transcripts/YYYY-MM-DD-title.md` | Lookup only — not “read this today” |
+| Transcript | `90_archive/transcripts/YYYY-MM-DD-title.md` | Lookup only — not “read this today” |
 
 Key sentences in the distilled note link to the **matching paragraph** in the
-transcript (`[p2]` → `[[99_Archive/transcripts/…#^gobs-YYYYMMDD-2]]`). In
+transcript (`[p2]` → `[[90_archive/transcripts/…#^gobs-YYYYMMDD-2]]`). In
 Obsidian, click the link to jump to the original wording.
 
 Archive is **not** a calendar event and is **not** the home-page “read this
@@ -177,14 +182,14 @@ contain `..`.
 Distilled only:
 
 ```bash
-gobs save --note 30_Lessons/idea.md --body-file distilled.md
+gobs save --note 30_lessons/idea.md --body-file distilled.md
 ```
 
 With transcript. Paragraphs in `chat.md` are separated by blank lines.
 `[p2]` in the distilled file becomes a wikilink to paragraph 2:
 
 ```bash
-gobs save --note 30_Lessons/idea.md --body-file distilled.md --chat-file chat.md --title idea
+gobs save --note 30_lessons/idea.md --body-file distilled.md --chat-file chat.md --title idea
 ```
 
 If there are no `[pN]` markers, gobs appends a single Source link to

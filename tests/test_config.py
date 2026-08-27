@@ -27,7 +27,7 @@ class ConfigTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
             vault = root / "Notes" / "MyVault"
-            nested = vault / "20_Areas" / "topic"
+            nested = vault / "20_creation" / "topic"
             nested.mkdir(parents=True)
             (vault / ".obsidian").mkdir()
             self.assertEqual(find_vault(nested), vault.resolve())

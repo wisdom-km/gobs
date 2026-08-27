@@ -27,16 +27,16 @@ class InitTests(unittest.TestCase):
             gobs = vault / ".gobs"
             gobs.mkdir()
             gobs.joinpath("config.toml").write_text(
-                'learn = "22_study/00_learn"\ntranscripts = "90_archive/transcripts"\n',
+                'learn = "10_projects/my_learn"\ntranscripts = "90_archive/sessions"\n',
                 encoding="utf-8",
             )
             with patch("gobs.config.user_config_path", self._home(tmp)):
                 actions = init_vault(vault, skeleton=False, set_default=False)
             text = (vault / ".gobs" / "config.toml").read_text(encoding="utf-8")
-            self.assertIn("22_study/00_learn", text)
-            self.assertIn("90_archive/transcripts", text)
-            self.assertTrue((vault / "22_study" / "00_learn").is_dir())
-            self.assertNotIn("15_Learn", actions)
+            self.assertIn("10_projects/my_learn", text)
+            self.assertIn("90_archive/sessions", text)
+            self.assertTrue((vault / "10_projects" / "my_learn").is_dir())
+            self.assertNotIn("22_study/00_learn", actions)
 
     def test_init_does_not_overwrite_agents(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -63,9 +63,12 @@ class InitTests(unittest.TestCase):
             with patch("gobs.config.user_config_path", self._home(tmp)):
                 actions = init_vault(vault, skeleton=True, set_default=False)
             self.assertEqual(actions["README.md"], "skipped")
-            self.assertTrue((vault / "00_Inbox").is_dir())
-            self.assertTrue((vault / "10_Projects").is_dir())
-            self.assertTrue((vault / "99_Archive" / "transcripts").is_dir())
+            self.assertTrue((vault / "00_inbox").is_dir())
+            self.assertTrue((vault / "10_projects").is_dir())
+            self.assertTrue((vault / "20_creation").is_dir())
+            self.assertTrue((vault / "21_metaphysics").is_dir())
+            self.assertTrue((vault / "22_study" / "00_learn").is_dir())
+            self.assertTrue((vault / "90_archive" / "transcripts").is_dir())
             self.assertTrue((vault / "AGENTS.md").is_file())
             text = (vault / "AGENTS.md").read_text(encoding="utf-8")
             self.assertIn("scribe and archivist", text)

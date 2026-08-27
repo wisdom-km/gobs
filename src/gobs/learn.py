@@ -1,4 +1,4 @@
-"""L0→L1 domain cards (topic folder, or 15_Learn/ as fallback)."""
+"""L0→L1 domain cards (topic folder, or 22_study/00_learn/ as fallback)."""
 
 from __future__ import annotations
 
@@ -164,7 +164,7 @@ def ensure_learn_dir(vault: Path) -> Path:
 def create_domain(vault: Path, name: str) -> tuple[Path, str]:
     """Create a domain card if missing. Returns (relative path, created|exists).
 
-    New cards still land in 15_Learn/. If a card with this title already
+    New cards still land in 22_study/00_learn/. If a card with this title already
     lives next to a topic (e.g. a paper folder), reuse that file.
     """
     existing = find_domain(vault, name)
@@ -252,7 +252,7 @@ def prepare_lecture(text: str) -> list[str]:
 
 
 def resolve_learn_note(vault: Path, note: str) -> str:
-    """Accept 15_Learn/Name.md or a moved card found by title/filename."""
+    """Accept 22_study/00_learn/Name.md or a moved card found by title/filename."""
     rel = note.replace("\\", "/").lstrip("/")
     dest = vault / rel
     if dest.is_file() and parse_card(dest, vault) is not None:

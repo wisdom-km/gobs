@@ -12,24 +12,29 @@ DEFAULT_MCP_URL = "http://127.0.0.1:27123/mcp/"
 DEFAULT_REST_URL = "http://127.0.0.1:27123/"
 DEFAULT_MCP_TIMEOUT = 30
 
-LEARN_DIR = "15_Learn"
+LEARN_DIR = "22_study/00_learn"
 LEARN_SKILL_NAME = "learn"
 LEARN_DOMAIN_SKILL_NAME = "learn-domain"
 
+# Johnny Decimal, English, lowercase. 20–24 are standing areas.
 SKELETON_DIRS = (
-    "00_Inbox",
-    "10_Projects",
+    "00_inbox",
+    "10_projects",
+    "20_creation",
+    "21_metaphysics",
+    "22_study",
     LEARN_DIR,
-    "20_Areas",
-    "30_Lessons",
-    "40_Prompts",
-    "50_Resources",
-    "90_Meta",
-    "99_Archive",
-    "99_Archive/transcripts",
+    "23_insights",
+    "24_self",
+    "30_lessons",
+    "40_prompts",
+    "50_resources",
+    "80_meta",
+    "90_archive",
+    "90_archive/transcripts",
 )
 
-DEFAULT_TRANSCRIPTS = "99_Archive/transcripts"
+DEFAULT_TRANSCRIPTS = "90_archive/transcripts"
 SAVE_SKILL_NAME = "save-to-vault"
 PROTOCOL_BEGIN = "<!-- gobs:save-protocol -->"
 PROTOCOL_END = "<!-- /gobs:save-protocol -->"

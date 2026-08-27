@@ -18,17 +18,17 @@ class SaveTests(unittest.TestCase):
             vault = Path(raw) / "vault"
             vault.mkdir()
             (vault / ".obsidian").mkdir()
-            (vault / "99_Archive" / "transcripts").mkdir(parents=True)
+            (vault / "90_archive" / "transcripts").mkdir(parents=True)
             cfg = vault / ".gobs" / "config.toml"
             cfg.parent.mkdir()
-            cfg.write_text('transcripts = "99_Archive/transcripts"\n', encoding="utf-8")
+            cfg.write_text('transcripts = "90_archive/transcripts"\n', encoding="utf-8")
 
             def boom() -> Path:
                 raise AssertionError("should not need user config")
 
             with patch("gobs.config.user_config_path", lambda: vault / "nope.toml"):
                 result = save_note(
-                    note="30_Lessons/idea.md",
+                    note="30_lessons/idea.md",
                     body="The point is this. [p2]\n",
                     chat="hello\n\nthis is the source paragraph\n\nbye",
                     vault=vault,

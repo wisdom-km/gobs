@@ -33,7 +33,7 @@ gobs init "/path/to/your/vault"
 gobs doctor
 ```
 
-空目录、可选骨架（`00_Inbox`、`10_Projects` …）：
+空目录、可选骨架（`00_inbox`、`10_projects` …）：
 
 ```bash
 gobs init ~/Notes/Vault --skeleton
@@ -43,7 +43,7 @@ gobs init ~/Notes/Vault --skeleton
 
 - 在 `AGENTS.md` 里插入（或更新）`<!-- gobs:save-protocol -->` 这一块；只有 `--force-agents` 才整份覆盖
 - 安装 `.grok/skills/save-to-vault/SKILL.md` → 斜杠命令 `/save-to-vault`
-- 没有的话创建 `99_Archive/transcripts/`
+- 没有的话创建 `90_archive/transcripts/`
 - 把库路径记进 `~/.gobs/config.toml`
 
 语言、日历、「这个目录不要动」写在**你自己的** `AGENTS.md` 里。gobs 不把私人规则推进 Git。
@@ -95,14 +95,19 @@ gobs --no-open       # 不自动开 Obsidian
 
 | 情况 | 目录 |
 | --- | --- |
-| 说不清 | `00_Inbox/` |
-| 会结束 | `10_Projects/` |
-| 不会结束 | `20_Areas/` |
-| 换项目还成立 | `30_Lessons/` |
-| 能再贴的提示词 | `40_Prompts/` |
-| PDF / 原件 | `50_Resources/` |
-| 库本身的说明 | `90_Meta/` |
-| 转录 / 冷页 | `99_Archive/` |
+| 说不清 | `00_inbox/` |
+| 会结束 | `10_projects/` |
+| 创作 | `20_creation/` |
+| 命理 | `21_metaphysics/` |
+| 学习 | `22_study/` |
+| 学习卡兜底 | `22_study/00_learn/` |
+| 洞察 | `23_insights/` |
+| 自我 | `24_self/` |
+| 换项目还成立 | `30_lessons/` |
+| 能再贴的提示词 | `40_prompts/` |
+| PDF / 原件 | `50_resources/` |
+| 库本身的说明 | `80_meta/` |
+| 转录 / 冷页 | `90_archive/` |
 
 库里已有自己的分类，就跟你的走。
 
@@ -122,7 +127,7 @@ gobs --no-open       # 不自动开 Obsidian
 | 文件 | 位置 | 用途 |
 | --- | --- | --- |
 | 精华 | 主题目录里的现行页 | 给你读 |
-| 原文 | `99_Archive/transcripts/日期-标题.md` | 备查，不当「今天看这篇」 |
+| 原文 | `90_archive/transcripts/日期-标题.md` | 备查，不当「今天看这篇」 |
 
 精华里的关键句链到转录**对应那一段**（`[p2]` → 块链接）。在 Obsidian 里点链接就跳到原话。
 
@@ -135,8 +140,8 @@ gobs --no-open       # 不自动开 Obsidian
 `--note` 必须是库内相对路径，不能包含 `..`。
 
 ```bash
-gobs save --note 30_Lessons/idea.md --body-file distilled.md
-gobs save --note 30_Lessons/idea.md --body-file distilled.md --chat-file chat.md --title idea
+gobs save --note 30_lessons/idea.md --body-file distilled.md
+gobs save --note 30_lessons/idea.md --body-file distilled.md --chat-file chat.md --title idea
 ```
 
 `chat.md` 里段落用空行分开。精华里的 `[p2]` 会变成指向第 2 段的 wikilink。没有 `[pN]` 时，会在文末加一条指向第 1 段的 Source。

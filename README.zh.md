@@ -33,7 +33,7 @@ gobs                               # 开库，进 Grok
 
 空库可选骨架：`gobs init ~/Notes/Vault --skeleton`。
 
-`gobs init` 会在 `AGENTS.md` 里插入保存协议块、装上 `/save-to-vault`、必要时创建 `99_Archive/transcripts/`。只有 `--force-agents` 才覆盖整份 `AGENTS.md`。
+`gobs init` 会在 `AGENTS.md` 里插入保存协议块、装上 `/save-to-vault`、必要时创建 `90_archive/transcripts/`。只有 `--force-agents` 才覆盖整份 `AGENTS.md`。
 
 日历、语言、「这个目录不要动」写在**你的** `AGENTS.md`。gobs 不复制 API 密钥；`gobs doctor` 检查 MCP 时不打印 token。
 
@@ -64,7 +64,7 @@ gobs sessions
 | 文件 | 位置 | 用途 |
 | --- | --- | --- |
 | 精华 | 主题目录里的现行页 | 给你读 |
-| 原文 | `99_Archive/transcripts/日期-标题.md` | 备查，不当「今天看这篇」 |
+| 原文 | `90_archive/transcripts/日期-标题.md` | 备查，不当「今天看这篇」 |
 
 精华里 `[pN]` 会链到转录**第 N 段**。在 Obsidian 里点链接跳回原话。
 
@@ -82,7 +82,7 @@ gobs --new
 gobs --resume ID
 gobs init [vault] [--skeleton] [--force-agents]
 gobs save --note 相对路径.md --body-file FILE [--chat-file FILE] [--title NAME]
-gobs learn save --note 15_Learn/NAME.md --body-file CARD.md --chat-file CHAT.md
+gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file CHAT.md
 gobs sessions
 gobs doctor
 gobs config vault PATH

@@ -18,7 +18,7 @@ the chat into a current note yourself.
 ## Learn mode
 
 If this session is in `/learn` (coach mode, `GOBS_LEARN=1`, or an active
-`15_Learn/` card): **保存 / 写进库 / 记下来** means a **readable lecture**
+`22_study/00_learn/` card): **保存 / 写进库 / 记下来** means a **readable lecture**
 into transcripts **and** the current block onto the domain card. The lecture
 must read like a default gobs 讲解 page, not a chat log. Follow the **learn**
 skill and run `gobs learn save`. Do not write a separate Lessons page. Do not

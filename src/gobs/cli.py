@@ -54,7 +54,7 @@ def _parser() -> argparse.ArgumentParser:
     init_p.add_argument(
         "--skeleton",
         action="store_true",
-        help="Create the optional 00_Inbox / 15_Learn / 10_Projects / … folders if missing",
+        help="Create the optional 00_inbox / 10_projects / 22_study / … folders if missing",
     )
     init_p.add_argument(
         "--force-agents",
@@ -113,7 +113,7 @@ def _parser() -> argparse.ArgumentParser:
     learn_save.add_argument(
         "--note",
         required=True,
-        help="Vault-relative domain card path (15_Learn/Name.md still finds a moved card)",
+        help="Vault-relative domain card path (22_study/00_learn/Name.md still finds a moved card)",
     )
     learn_save.add_argument("--body-file", required=True, help="Full updated domain card")
     learn_save.add_argument(
@@ -255,7 +255,7 @@ def _cmd_learn(ns: argparse.Namespace) -> int:
     if ns.learn_cmd != "start":
         print(
             "usage: gobs learn start <名称> | gobs learn status | "
-            "gobs learn save --note 15_Learn/NAME.md --body-file CARD.md --chat-file CHAT.md",
+            "gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file CHAT.md",
             file=sys.stderr,
         )
         return 2
