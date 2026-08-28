@@ -153,6 +153,29 @@ class InitTests(unittest.TestCase):
             self.assertGreater(out.stat().st_size, 1000)
             self.assertIn(str(out.resolve()), proc.stdout)
 
+    def test_draw_py_process_writes_gif(self) -> None:
+        try:
+            import matplotlib  # noqa: F401
+            import PIL  # noqa: F401
+        except ImportError:
+            self.skipTest("matplotlib/pillow not installed")
+        import subprocess
+        import sys
+
+        helper = Path(__file__).resolve().parents[1] / "src" / "gobs" / "templates" / "viz" / "draw.py"
+        with tempfile.TemporaryDirectory() as raw:
+            out = Path(raw) / "process.gif"
+            proc = subprocess.run(
+                [sys.executable, str(helper), "process", "--out", str(out)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(out.is_file())
+            self.assertGreater(out.stat().st_size, 1000)
+            self.assertIn(str(out.resolve()), proc.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

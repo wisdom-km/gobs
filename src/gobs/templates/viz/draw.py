@@ -413,15 +413,280 @@ def draw_coref(out: Path, cjk: bool) -> None:
     plt.close(fig)
 
 
+def _have_pillow() -> bool:
+    try:
+        import PIL  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def draw_process(out: Path, cjk: bool) -> None:
+    """Looping GIF: sequential playhead, then attention weights grow in."""
+    from matplotlib.animation import FuncAnimation, PillowWriter
+
+    n = len(TOKENS)
+    xs = np.arange(n, dtype=float)
+    seq_n = n
+    hold_a = 3
+    attn_n = 8
+    hold_b = 4
+    frames = seq_n + hold_a + attn_n + hold_b
+    fig, ax = plt.subplots(figsize=(12.4, 4.5))
+    fig.patch.set_facecolor("white")
+
+    def _frame_ax() -> None:
+        ax.set_xlim(-0.7, n - 0.3)
+        ax.set_ylim(-0.22, 1.68)
+        ax.axis("off")
+        ax.set_facecolor(BG)
+        ax.text(
+            0.995,
+            0.98,
+            lab("示意", "schematic", cjk),
+            transform=ax.transAxes,
+            ha="right",
+            va="top",
+            fontsize=7.5,
+            color=MUTED,
+            style="italic",
+        )
+
+    def _seq_scene(play: int) -> None:
+        y_tok = 1.02
+        _token_boxes(ax, xs, y_tok, TOKENS, query_i=None, cjk=cjk)
+        # playhead underline
+        ax.plot(
+            [xs[play] - 0.36, xs[play] + 0.36],
+            [y_tok - 0.24, y_tok - 0.24],
+            color=SEQ,
+            lw=2.0,
+            solid_capstyle="round",
+            zorder=5,
+        )
+        if play > 0:
+            ax.annotate(
+                "",
+                xy=(xs[play] - 0.42, y_tok),
+                xytext=(xs[play - 1] + 0.42, y_tok),
+                arrowprops=dict(arrowstyle="-|>", color=SEQ, lw=1.6, mutation_scale=11),
+                zorder=2,
+            )
+        # hidden-state marker at current token
+        ax.scatter(
+            [xs[play]],
+            [y_tok + 0.30],
+            s=36,
+            c=SEQ,
+            zorder=5,
+            marker="s",
+            edgecolors=INK,
+            linewidths=0.4,
+        )
+        h_ha = "right" if play >= n - 2 else "center"
+        h_x = xs[play] - 0.12 if play >= n - 2 else xs[play]
+        ax.text(
+            h_x,
+            y_tok + 0.46,
+            lab("隐状态", "h", cjk),
+            ha=h_ha,
+            va="bottom",
+            fontsize=7,
+            color=MUTED,
+        )
+        clarity = np.exp(-0.55 * np.maximum(xs - ANIMAL_I, 0))
+        clarity[:ANIMAL_I] = 0.15
+        bar_y, bar_h = 0.36, 0.22
+        for i in range(play + 1):
+            x = xs[i]
+            t = float(clarity[i])
+            face = _mix(CLEAR, HUSH, 1 - t)
+            ax.add_patch(
+                Rectangle(
+                    (x - 0.38, bar_y),
+                    0.76,
+                    bar_h,
+                    facecolor=face,
+                    edgecolor="#c5cad0",
+                    linewidth=0.6,
+                    zorder=2,
+                )
+            )
+            if i == ANIMAL_I:
+                ax.text(
+                    x,
+                    bar_y + bar_h / 2,
+                    "animal",
+                    ha="center",
+                    va="center",
+                    fontsize=7,
+                    color="white",
+                    fontweight="bold",
+                )
+            elif i == IT_I:
+                ax.text(
+                    x,
+                    bar_y + bar_h / 2,
+                    lab("糊", "blur", cjk),
+                    ha="center",
+                    va="center",
+                    fontsize=7.5,
+                    color=INK,
+                )
+        ax.text(
+            -0.55,
+            bar_y + bar_h / 2,
+            lab("印象包\n里的 animal", "packet:\nclarity of\nanimal", cjk),
+            ha="right",
+            va="center",
+            fontsize=7.2,
+            color=MUTED,
+        )
+        ax.set_title(
+            lab("排队传话，每步只看见上一步", "Sequential: each step sees only the previous", cjk),
+            loc="left",
+            color=INK,
+            pad=6,
+            fontsize=12,
+        )
+        ax.text(
+            xs.mean(),
+            -0.08,
+            lab(
+                "方块是 token，箭头是隐状态只传给下一步。示意。",
+                "Boxes are tokens; the arrow is the hidden state passed only forward.",
+                cjk,
+            ),
+            ha="center",
+            va="top",
+            fontsize=7.5,
+            color=MUTED,
+        )
+
+    def _attn_scene(grow: float) -> None:
+        y_tok = 0.52
+        _token_boxes(ax, xs, y_tok, TOKENS, query_i=IT_I, cjk=cjk)
+        q = xs[IT_I]
+        y_src = y_tok + 0.22
+        g = max(0.0, min(1.0, grow))
+        for i, w in enumerate(ATTN_W):
+            if i == IT_I:
+                continue
+            rad = 0.18 + 0.055 * abs(i - IT_I)
+            if i > IT_I:
+                rad = -rad
+            color = HIGH if i == ANIMAL_I else (LOW if i == STREET_I else MUTED)
+            lw = (0.5 + 10.5 * w) * g
+            alpha = (0.35 + 0.65 * (w / ATTN_W.max())) * g
+            if lw < 0.08 or alpha < 0.04:
+                continue
+            ax.annotate(
+                "",
+                xy=(xs[i], y_tok + 0.20),
+                xytext=(q, y_src),
+                arrowprops=dict(
+                    arrowstyle="-|>",
+                    color=color,
+                    lw=lw,
+                    mutation_scale=8,
+                    connectionstyle=f"arc3,rad={rad:.3f}",
+                    alpha=min(alpha, 0.95),
+                ),
+                zorder=1,
+            )
+        if g > 0.25:
+            fade = min(1.0, (g - 0.25) / 0.75)
+            ax.text(
+                xs[ANIMAL_I],
+                1.42,
+                lab("权重大", "high weight", cjk),
+                ha="center",
+                fontsize=8,
+                color=HIGH,
+                fontweight="bold",
+                alpha=fade,
+            )
+            ax.text(
+                xs[STREET_I],
+                1.42,
+                lab("权重小", "low weight", cjk),
+                ha="center",
+                fontsize=8,
+                color=LOW,
+                alpha=fade,
+            )
+        ax.set_title(
+            lab("attention，it 一次看全句", "attention: it sees the whole sentence at once", cjk),
+            loc="left",
+            color=INK,
+            pad=6,
+            fontsize=12,
+        )
+        ax.text(
+            xs.mean(),
+            -0.08,
+            lab(
+                "粗线 → animal，细线 → street。示意，不是训练好的模型。",
+                "Thick → animal, thin → street. Schematic, not a trained model.",
+                cjk,
+            ),
+            ha="center",
+            va="top",
+            fontsize=7.5,
+            color=MUTED,
+        )
+
+    def update(frame: int):
+        ax.clear()
+        _frame_ax()
+        if frame < seq_n:
+            _seq_scene(frame)
+        elif frame < seq_n + hold_a:
+            _seq_scene(seq_n - 1)
+        else:
+            k = frame - (seq_n + hold_a)
+            if k >= attn_n:
+                grow = 1.0
+            else:
+                grow = (k + 1) / attn_n
+            _attn_scene(grow)
+        return []
+
+    frame_ids = list(range(frames))
+    anim = FuncAnimation(
+        fig,
+        update,
+        frames=frame_ids,
+        interval=200,
+        blit=False,
+        cache_frame_data=False,
+        repeat=True,
+    )
+    writer = PillowWriter(fps=5)
+    anim.save(str(out), writer=writer, dpi=105)
+    plt.close(fig)
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Library diagrams for /learn (adult, schematic).")
-    p.add_argument("figure", choices=("seq-vs-attn", "coref"))
-    p.add_argument("--out", required=True, help="Output PNG path")
+    p.add_argument("figure", choices=("seq-vs-attn", "coref", "process"))
+    p.add_argument("--out", required=True, help="Output PNG or GIF path")
+    p.add_argument(
+        "--anim",
+        action="store_true",
+        help="Write a looping GIF (seq-vs-attn --anim is the same as process)",
+    )
     args = p.parse_args(argv)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
+    want_gif = args.figure == "process" or (args.figure == "seq-vs-attn" and args.anim)
+    if want_gif and not _have_pillow():
+        print("GIF export needs pillow. Install with: pip install pillow", file=sys.stderr)
+        return 1
     cjk = setup_style()
-    if args.figure == "seq-vs-attn":
+    if want_gif:
+        draw_process(out, cjk)
+    elif args.figure == "seq-vs-attn":
         draw_seq_vs_attn(out, cjk)
     else:
         draw_coref(out, cjk)

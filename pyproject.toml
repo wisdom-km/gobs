@@ -22,7 +22,7 @@ Homepage = "https://github.com/wisdom-km/gobs"
 Issues = "https://github.com/wisdom-km/gobs/issues"
 
 [project.optional-dependencies]
-viz = ["matplotlib>=3.8"]
+viz = ["matplotlib>=3.8", "pillow>=10"]
 
 [project.scripts]
 gobs = "gobs.cli:main"
