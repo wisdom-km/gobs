@@ -78,7 +78,7 @@ def install_skill(vault: Path, name: str) -> str:
 
 
 def install_viz(vault: Path) -> dict[str, str]:
-    """Copy offline draw.html + 画图.md into 80_meta/gobs-viz/ on every init."""
+    """Copy draw.html + 画图.md + draw.py into 80_meta/gobs-viz/ on every init."""
     dest_dir = vault / VIZ_DIR
     dest_dir.mkdir(parents=True, exist_ok=True)
     actions: dict[str, str] = {}

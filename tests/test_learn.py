@@ -157,6 +157,7 @@ class LearnTests(unittest.TestCase):
             self.assertEqual(actions["22_study/00_learn"], "created")
             self.assertTrue((vault / "80_meta" / "gobs-viz" / "draw.html").is_file())
             self.assertTrue((vault / "80_meta" / "gobs-viz" / "画图.md").is_file())
+            self.assertTrue((vault / "80_meta" / "gobs-viz" / "draw.py").is_file())
             viz_html = (vault / "80_meta" / "gobs-viz" / "draw.html").read_text(encoding="utf-8")
             self.assertIn("看谁", viz_html)
             self.assertIn("印象包", viz_html)

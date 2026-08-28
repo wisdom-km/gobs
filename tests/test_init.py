@@ -100,10 +100,13 @@ class InitTests(unittest.TestCase):
                 actions = init_vault(vault, skeleton=False, set_default=False)
             html = vault / "80_meta" / "gobs-viz" / "draw.html"
             note = vault / "80_meta" / "gobs-viz" / "画图.md"
+            helper = vault / "80_meta" / "gobs-viz" / "draw.py"
             self.assertTrue(html.is_file())
             self.assertTrue(note.is_file())
+            self.assertTrue(helper.is_file())
             self.assertEqual(actions["80_meta/gobs-viz/draw.html"], "created")
             self.assertEqual(actions["80_meta/gobs-viz/画图.md"], "created")
+            self.assertEqual(actions["80_meta/gobs-viz/draw.py"], "created")
             html_text = html.read_text(encoding="utf-8")
             note_text = note.read_text(encoding="utf-8")
             self.assertIn("看谁", html_text)
@@ -126,7 +129,29 @@ class InitTests(unittest.TestCase):
             with patch("gobs.config.user_config_path", self._home(tmp)):
                 again = init_vault(vault, skeleton=False, set_default=False)
             self.assertEqual(again["80_meta/gobs-viz/draw.html"], "updated")
+            self.assertEqual(again["80_meta/gobs-viz/draw.py"], "updated")
 
+    def test_draw_py_seq_vs_attn_writes_png(self) -> None:
+        try:
+            import matplotlib  # noqa: F401
+        except ImportError:
+            self.skipTest("matplotlib not installed")
+        import subprocess
+        import sys
+
+        helper = Path(__file__).resolve().parents[1] / "src" / "gobs" / "templates" / "viz" / "draw.py"
+        with tempfile.TemporaryDirectory() as raw:
+            out = Path(raw) / "seq-vs-attn.png"
+            proc = subprocess.run(
+                [sys.executable, str(helper), "seq-vs-attn", "--out", str(out)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(out.is_file())
+            self.assertGreater(out.stat().st_size, 1000)
+            self.assertIn(str(out.resolve()), proc.stdout)
 
 
 if __name__ == "__main__":

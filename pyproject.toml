@@ -21,6 +21,9 @@ classifiers = [
 Homepage = "https://github.com/wisdom-km/gobs"
 Issues = "https://github.com/wisdom-km/gobs/issues"
 
+[project.optional-dependencies]
+viz = ["matplotlib>=3.8"]
+
 [project.scripts]
 gobs = "gobs.cli:main"
 
@@ -32,4 +35,4 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-gobs = ["templates/*.md", "templates/skills/*/SKILL.md", "templates/viz/*"]
+gobs = ["templates/*.md", "templates/skills/*/SKILL.md", "templates/viz/*", "templates/viz/examples/*"]
