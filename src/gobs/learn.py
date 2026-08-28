@@ -707,7 +707,7 @@ def boot_prompt(
         "旧 L0（麻烦 → 例子 → 没有它画糊 → 「只要记住」2～3 句）只用于这 1 个组块。"
         "principles 课最多新上 4 条；卡上总额 3–7，不够 3 就下次 principles 再补。"
         "有论文/原文：概念用原文的词，旁边跟一句这个语境的人话；不要另造正名。"
-        "过程课必须画出「有它 / 没有它」：优先 matplotlib/graphviz（python 80_meta/gobs-viz/draw.py）或讲解里当场 Mermaid；时间过程可用库动画（gif）；库图这轮没好再用 ASCII 兜底。排队课要把印象包被挤画出来，不能只画箭头。定界、判断不要硬画。"
+        "过程课必须画出「有它 / 没有它」：过程课优先打开 80_meta/gobs-viz/process.html 让对方自己点下一步。静态对照可用 matplotlib/graphviz（python 80_meta/gobs-viz/draw.py）或讲解里当场 Mermaid；库图这轮没好再用 ASCII 兜底。排队课要把印象包被挤画出来，不能只画箭头。定界、判断不要硬画。"
         "encode / map 课看 80_meta/gobs-viz/画图.md。禁止用图像生成做绘本或幼儿园插画。"
         "论文第一课只吃摘要+引言。配件 vs 整台必须先画拆/留左右对照（同一张图），未画禁甩配件/零件/有关。attention 说成找这个字在说谁。讲完问哪里没听懂。听懂了/可以了只收当前 phase。禁止对学生说最空、这课行。"
         "讲完先停：2～3 个图上能指的卡住点，补上再课间确认。不要问 LLM。"

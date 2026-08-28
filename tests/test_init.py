@@ -101,12 +101,15 @@ class InitTests(unittest.TestCase):
             html = vault / "80_meta" / "gobs-viz" / "draw.html"
             note = vault / "80_meta" / "gobs-viz" / "画图.md"
             helper = vault / "80_meta" / "gobs-viz" / "draw.py"
+            process = vault / "80_meta" / "gobs-viz" / "process.html"
             self.assertTrue(html.is_file())
             self.assertTrue(note.is_file())
             self.assertTrue(helper.is_file())
+            self.assertTrue(process.is_file())
             self.assertEqual(actions["80_meta/gobs-viz/draw.html"], "created")
             self.assertEqual(actions["80_meta/gobs-viz/画图.md"], "created")
             self.assertEqual(actions["80_meta/gobs-viz/draw.py"], "created")
+            self.assertEqual(actions["80_meta/gobs-viz/process.html"], "created")
             html_text = html.read_text(encoding="utf-8")
             note_text = note.read_text(encoding="utf-8")
             self.assertIn("看谁", html_text)
@@ -130,6 +133,7 @@ class InitTests(unittest.TestCase):
                 again = init_vault(vault, skeleton=False, set_default=False)
             self.assertEqual(again["80_meta/gobs-viz/draw.html"], "updated")
             self.assertEqual(again["80_meta/gobs-viz/draw.py"], "updated")
+            self.assertEqual(again["80_meta/gobs-viz/process.html"], "updated")
 
     def test_draw_py_seq_vs_attn_writes_png(self) -> None:
         try:

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>过程</title>
+<style>
+  :root {
+    --bg: #fafbfc;
+    --ink: #2c3338;
+    --muted: #6b7280;
+    --high: #b4533a;
+    --query: #3d5a73;
+    --mid: #6d7f4f;
+    --card: #ffffff;
+    --line: #c5cad0;
+    --box: #eef1f4;
+    --query-fill: #d9e3ee;
+    --high-fill: #f3e4e0;
+    --low: #9aa3ad;
+    --hush: #d4d8dc;
+    --clear: #3d5a73;
+    --ok: #3d6b4f;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", "Source Han Sans SC",
+      "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.45;
+  }
+  body { max-width: 960px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 1.35rem; font-weight: 650; letter-spacing: 0.02em; margin: 4px 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 16px; font-size: 0.92rem; }
+  .tag {
+    display: inline-block; margin-left: 8px; padding: 1px 7px;
+    border: 1px solid var(--line); color: var(--muted);
+    font-size: 0.72rem; letter-spacing: 0.04em; font-weight: 600;
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; align-items: center; }
+  button, .word {
+    min-height: 40px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink);
+    font: inherit; font-weight: 600; padding: 7px 12px; cursor: pointer;
+  }
+  button:hover { border-color: var(--query); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.on {
+    background: var(--query); border-color: var(--query); color: #fff;
+  }
+  button.ghost { background: transparent; }
+  button.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  input[type="text"] {
+    flex: 1; min-width: 200px; min-height: 40px; font: inherit;
+    border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px;
+    background: #fff; color: var(--ink);
+  }
+  .step-n { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 7.5em; text-align: center; }
+  .cap {
+    margin: 4px 0 8px; min-height: 1.4em; font-weight: 650; color: var(--ink);
+  }
+  .cap .who { color: var(--high); }
+  .stage { position: relative; margin: 8px 0 6px; }
+  svg.arcs { display: block; width: 100%; height: 96px; }
+  .words {
+    display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: flex-end;
+    min-height: 56px;
+  }
+  .col { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 64px; }
+  .word { min-width: 64px; text-align: center; background: var(--box); position: relative; }
+  .word small {
+    display: block; font-size: 0.68rem; font-weight: 700; color: var(--muted); margin-top: 2px;
+  }
+  .word.now { border-color: var(--query); background: var(--query-fill); color: var(--query); }
+  .word.done { opacity: 0.72; }
+  .word.wait { opacity: 0.42; }
+  .word.ask { border-color: var(--query); background: var(--query-fill); color: var(--query); border-width: 2px; }
+  .word.hi { border-color: var(--high); background: var(--high-fill); color: var(--high); }
+  .word.lo { border-color: var(--low); background: #eef0f2; color: #4b5563; }
+  .bar {
+    height: 22px; border: 1px solid #c5cad0; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; color: var(--ink);
+  }
+  .bar.empty { background: transparent; border-style: dashed; color: transparent; }
+  .side {
+    color: var(--muted); font-size: 0.78rem; margin: 2px 0 10px;
+  }
+  .legend { color: var(--muted); font-size: 0.82rem; margin: 6px 0 10px; }
+  .toast { min-height: 1.6em; margin-top: 8px; color: var(--ok); font-weight: 650; }
+  .preview {
+    white-space: pre-wrap; background: var(--ink); color: #f3f4f6;
+    border-radius: 6px; padding: 12px; font-size: 0.82rem; margin-top: 10px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .hr { height: 1px; background: var(--line); margin: 14px 0; border: 0; }
+</style>
+</head>
+<body>
+  <h1>过程<span class="tag">示意</span></h1>
+  <p class="sub">你点一步看一步。不是自动播的动画。示意，不是训练好的模型。</p>
+
+  <div class="row">
+    <input id="sentence" type="text" value="The animal didn't cross the street because it was too tired" aria-label="句子">
+    <button type="button" id="apply">应用</button>
+  </div>
+
+  <div class="row" role="group" aria-label="模式">
+    <button type="button" class="on" id="mode-queue">没有它（排队传话）</button>
+    <button type="button" id="mode-attn">有 attention</button>
+  </div>
+
+  <div class="row">
+    <button type="button" id="prev">上一步</button>
+    <strong class="step-n" id="step-n">第 1 / 11 步</strong>
+    <button type="button" id="next">下一步</button>
+  </div>
+
+  <p class="cap" id="caption">到这一步，包里的 animal 还清楚。</p>
+  <p class="side" id="side">印象包里的 animal：越往后越淡。</p>
+
+  <div class="stage">
+    <svg class="arcs" id="arcs" aria-hidden="true"></svg>
+    <div class="words" id="words"></div>
+  </div>
+  <p class="legend" id="legend">点词跳到那一步。左 / 右方向键也可步进。</p>
+
+  <div class="row">
+    <button type="button" class="primary" id="copy">复制到笔记</button>
+    <button type="button" class="ghost" id="reset">清空权重</button>
+  </div>
+  <div class="toast" id="toast"></div>
+  <pre class="preview" id="preview" hidden></pre>
+
+<script>
+(function () {
+  var DEFAULT = "The animal didn't cross the street because it was too tired";
+  var tokens = [];
+  var step = 1;
+  var attn = false;
+  var weights = {};
+  var animalI = -1;
+  var askI = -1;
+  var wordEls = [];
+
+  function $(id) { return document.getElementById(id); }
+
+  function splitWords(s) {
+    return String(s || "").trim().split(/\s+/).filter(Boolean);
+  }
+
+  function bare(w) {
+    return String(w || "").replace(/[.,!?;:"'()]/g, "").toLowerCase();
+  }
+
+  function findNamed(names) {
+    for (var i = 0; i < tokens.length; i++) {
+      var t = bare(tokens[i]);
+      for (var j = 0; j < names.length; j++) {
+        if (t === names[j]) return i;
+      }
+    }
+    return -1;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+    });
+  }
+
+  function toast(msg) { $("toast").textContent = msg || ""; }
+
+  function showPrev(text) {
+    var el = $("preview");
+    el.hidden = !text;
+    el.textContent = text || "";
+  }
+
+  function copyText(text) {
+    function ok() { toast("已复制，去笔记里粘贴。"); showPrev(text); }
+    function fail() { toast("复制失败：请手动选中下面的字。"); showPrev(text); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok).catch(function () {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+          ok();
+        } catch (e) { fail(); }
+      });
+    } else {
+      try {
+        var ta2 = document.createElement("textarea");
+        ta2.value = text;
+        document.body.appendChild(ta2);
+        ta2.select();
+        document.execCommand("copy");
+        ta2.remove();
+        ok();
+      } catch (e) { fail(); }
+    }
+  }
+
+  function mix(a, b, t) {
+    function rgb(h) {
+      h = h.replace("#", "");
+      return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+    }
+    var A = rgb(a), B = rgb(b);
+    var r = Math.round((1 - t) * A[0] + t * B[0]);
+    var g = Math.round((1 - t) * A[1] + t * B[1]);
+    var bl = Math.round((1 - t) * A[2] + t * B[2]);
+    return "#" + [r, g, bl].map(function (n) {
+      var s = n.toString(16);
+      return s.length === 1 ? "0" + s : s;
+    }).join("");
+  }
+
+  function animalClarity(i) {
+    if (animalI < 0) return 0.15;
+    if (i < animalI) return 0.15;
+    return Math.exp(-0.55 * (i - animalI));
+  }
+
+  function packetBlurred() {
+    if (askI >= 0 && step - 1 >= askI) return true;
+    return false;
+  }
+
+  function applySentence(raw) {
+    tokens = splitWords(raw || $("sentence").value || DEFAULT);
+    if (!tokens.length) tokens = splitWords(DEFAULT);
+    animalI = findNamed(["animal"]);
+    askI = findNamed(["it", "它"]);
+    if (askI < 0) askI = tokens.length ? tokens.length - 1 : -1;
+    step = 1;
+    weights = {};
+    render();
+  }
+
+  function clampStep() {
+    var n = tokens.length || 1;
+    if (step < 1) step = 1;
+    if (step > n) step = n;
+  }
+
+  function onWordClick(i) {
+    if (attn) {
+      if (i === askI) return;
+      if (weights[i] === "hi") weights[i] = "lo";
+      else if (weights[i] === "lo") delete weights[i];
+      else weights[i] = "hi";
+      render();
+      return;
+    }
+    step = i + 1;
+    render();
+  }
+
+  function render() {
+    clampStep();
+    var n = tokens.length || 1;
+    $("step-n").textContent = "第 " + step + " / " + n + " 步";
+    $("prev").disabled = step <= 1;
+    $("next").disabled = step >= n;
+    $("mode-queue").className = attn ? "" : "on";
+    $("mode-attn").className = attn ? "on" : "";
+    $("reset").style.display = attn ? "" : "none";
+
+    if (attn) {
+      $("caption").innerHTML = "「它」在看谁" + attnWhoLine();
+      $("side").textContent = "点其他词：无 → 高 → 低 → 无。粗红线 = 高，细灰线 = 低。";
+      $("legend").textContent = "问词是 it。这是示意权重，不是训练好的模型。";
+    } else {
+      var blurred = packetBlurred();
+      $("caption").textContent = blurred
+        ? "到这一步，包里的 animal 已糊。"
+        : "到这一步，包里的 animal 还清楚。";
+      $("side").textContent = "印象包里的 animal：从 animal 起按距离变淡。到 it 标 糊。";
+      $("legend").textContent = "点词跳到那一步。左 / 右方向键也可步进。";
+    }
+
+    var box = $("words");
+    box.innerHTML = "";
+    wordEls = [];
+    tokens.forEach(function (w, i) {
+      var col = document.createElement("div");
+      col.className = "col";
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "word";
+      b.dataset.i = String(i);
+      var tag = "";
+      if (attn) {
+        if (i === askI) { b.classList.add("ask"); tag = "问"; }
+        if (weights[i] === "hi") { b.classList.add("hi"); tag = "高"; }
+        if (weights[i] === "lo") { b.classList.add("lo"); tag = "低"; }
+      } else {
+        if (i + 1 === step) b.classList.add("now");
+        else if (i + 1 < step) b.classList.add("done");
+        else b.classList.add("wait");
+      }
+      b.innerHTML = escapeHtml(w) + (tag ? "<small>" + tag + "</small>" : "");
+      b.addEventListener("click", function () { onWordClick(i); });
+      col.appendChild(b);
+      if (!attn) {
+        var bar = document.createElement("div");
+        bar.className = "bar";
+        if (i + 1 > step) {
+          bar.classList.add("empty");
+          bar.textContent = "·";
+        } else {
+          var t = animalClarity(i);
+          bar.style.background = mix("#3d5a73", "#d4d8dc", 1 - t);
+          bar.style.color = t > 0.35 ? "#fff" : "#2c3338";
+          if (animalI >= 0 && i === animalI) bar.textContent = "animal";
+          else if (askI >= 0 && i === askI) bar.textContent = "糊";
+          else bar.textContent = "";
+        }
+        col.appendChild(bar);
+      }
+      box.appendChild(col);
+      wordEls.push(b);
+    });
+    drawArcs();
+  }
+
+  function attnWhoLine() {
+    var hi = [], lo = [];
+    Object.keys(weights).forEach(function (k) {
+      var i = Number(k);
+      if (weights[k] === "hi") hi.push(tokens[i]);
+      if (weights[k] === "lo") lo.push(tokens[i]);
+    });
+    var bits = [];
+    if (hi.length) bits.push("<span class=\"who\">" + escapeHtml(hi.join("、")) + " 高</span>");
+    if (lo.length) bits.push(escapeHtml(lo.join("、")) + " 低");
+    return bits.length ? "：" + bits.join("，") : "。";
+  }
+
+  function drawArcs() {
+    var svg = $("arcs");
+    svg.innerHTML = "";
+    if (!attn || askI < 0) {
+      svg.style.height = "28px";
+      svg.setAttribute("viewBox", "0 0 100 28");
+      return;
+    }
+    var keys = Object.keys(weights);
+    if (!keys.length) {
+      svg.style.height = "48px";
+      svg.setAttribute("viewBox", "0 0 100 48");
+      return;
+    }
+    var wrap = $("words");
+    var wr = wrap.getBoundingClientRect();
+    var W = Math.max(wr.width || 600, 200);
+    var H = 96;
+    svg.style.height = H + "px";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var qb = wordEls[askI];
+    if (!qb) return;
+    var qr = qb.getBoundingClientRect();
+    var x1 = qr.left + qr.width / 2 - wr.left;
+    var y1 = H - 6;
+    keys.forEach(function (k) {
+      var i = Number(k);
+      var tb = wordEls[i];
+      if (!tb) return;
+      var tr = tb.getBoundingClientRect();
+      var x2 = tr.left + tr.width / 2 - wr.left;
+      var y2 = H - 6;
+      var lift = 28 + Math.min(52, Math.abs(x2 - x1) * 0.22);
+      var cpx = (x1 + x2) / 2;
+      var cpy = H - lift;
+      var hi = weights[i] === "hi";
+      var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", "M " + x1 + " " + y1 + " Q " + cpx + " " + cpy + " " + x2 + " " + y2);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", hi ? "#b4533a" : "#9aa3ad");
+      path.setAttribute("stroke-width", hi ? "5.2" : "1.5");
+      path.setAttribute("stroke-linecap", "round");
+      if (!hi) path.setAttribute("stroke-dasharray", "5 4");
+      svg.appendChild(path);
+    });
+  }
+
+  function exportNote() {
+    var n = tokens.length;
+    if (!n) { toast("先写一句。"); return; }
+    var text = "## 双编码\n\n";
+    if (attn) {
+      var src = askI >= 0 ? tokens[askI] : "it";
+      var lines = ["flowchart LR", "  src[\"" + src + "\"]"];
+      var hi = [], lo = [];
+      var k = 0;
+      Object.keys(weights).forEach(function (key) {
+        var w = tokens[Number(key)];
+        var id = "t" + k;
+        k += 1;
+        lines.push("  " + id + "[\"" + w + "\"]");
+        if (weights[key] === "hi") {
+          lines.push("  src ==>|高| " + id);
+          hi.push(w);
+        } else {
+          lines.push("  src -.->|低| " + id);
+          lo.push(w);
+        }
+      });
+      text += "有 attention。第 " + step + " / " + n + " 步。「它」在看谁。\n\n";
+      if (!hi.length && !lo.length) {
+        text += "还没点权。问词是 " + src + "。\n";
+      } else {
+        text += "```mermaid\n" + lines.join("\n") + "\n```\n\n";
+        if (hi.length) text += "高：" + hi.join("、") + "。\n";
+        if (lo.length) text += "低：" + lo.join("、") + "。\n";
+      }
+      text += "\n只要记住：it 一次看全句，权重大的先算。示意，不是训练好的模型。\n";
+    } else {
+      var play = step - 1;
+      var chain = tokens.map(function (w, i) {
+        return i === play ? "[" + w + "]" : w;
+      }).join(" -> ");
+      var ascii = tokens.join(" ");
+      var blurred = packetBlurred();
+      text += "没有它（排队传话）第 " + step + " / " + n + " 步。\n\n";
+      text += chain + "\n\n";
+      text += (blurred ? "到这一步，包里的 animal 已糊。" : "到这一步，包里的 animal 还清楚。") + "\n\n";
+      var mer = ["flowchart LR"];
+      tokens.forEach(function (w, i) {
+        mer.push("  t" + i + "[\"" + w + "\"]");
+        if (i > 0 && i <= play) mer.push("  t" + (i - 1) + " --> t" + i);
+        if (i > 0 && i > play) mer.push("  t" + (i - 1) + " -.-> t" + i);
+      });
+      text += "```mermaid\n" + mer.join("\n") + "\n```\n\n";
+      text += "ASCII：" + ascii + "\n";
+      text += "只要记住：排队传到 it 时，包里的 animal 已经被挤糊。\n";
+    }
+    copyText(text);
+  }
+
+  $("apply").addEventListener("click", function () {
+    applySentence($("sentence").value);
+    toast("");
+  });
+  $("prev").addEventListener("click", function () { step -= 1; render(); });
+  $("next").addEventListener("click", function () { step += 1; render(); });
+  $("mode-queue").addEventListener("click", function () { attn = false; render(); });
+  $("mode-attn").addEventListener("click", function () { attn = true; render(); });
+  $("copy").addEventListener("click", exportNote);
+  $("reset").addEventListener("click", function () {
+    weights = {};
+    render();
+    toast("已清空权重。");
+    showPrev("");
+  });
+
+  document.addEventListener("keydown", function (ev) {
+    var tag = (ev.target && ev.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (ev.key === "ArrowLeft") { ev.preventDefault(); step -= 1; render(); }
+    if (ev.key === "ArrowRight") { ev.preventDefault(); step += 1; render(); }
+  });
+  window.addEventListener("resize", drawArcs);
+
+  applySentence(DEFAULT);
+})();
+</script>
+</body>
+</html>
