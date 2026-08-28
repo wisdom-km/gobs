@@ -59,11 +59,13 @@ argument-hint: "[领域名，如 Transformer 或 英语]"
    **图（过程必须能看见）**
    过程课（怎么走 / 谁连谁 / 有它 vs 没有它）**必须**有一张能指的图，写进讲解正文。
    优先用库图：当场跑 `python 80_meta/gobs-viz/draw.py ...`（matplotlib / graphviz）或在讲解里写 Mermaid，跟讲同一轮出现。
-   过程课优先打开 `80_meta/gobs-viz/process.html` 让对方自己点下一步。不是自动播的 gif。ASCII / 静态图仍可用。
+   课堂优先 `gobs learn desk`（对话 + 图 + 笔记同一页，不依赖 Obsidian）。没有 desk 再打开 `80_meta/gobs-viz/process.html` 让对方自己点下一步。不是自动播的 gif。ASCII / 静态图仍可用。
    库图这轮还没好：用 **ASCII** 兜底。不要空讲。
    「没有它」若是排队/传递：**必须画出印象包被挤**（包里最清楚的是谁），不能只画箭头队列。糊要能在图上指出来。
    **不要硬画**：定界、够用/停线、纯判断——没有过程可看，就别硬造图。
    禁止图像生成、绘本、幼儿园插画。图给成年人：先准确，再通俗。
+
+   **图是通用协议，不是写死的小猫句。** 教练按**这篇**论文的例子写 `80_meta/gobs-viz/figure.json`（除非这篇就是那句）。教课 phase（enough/map/principles/encode）：图上给出论文对的标，对方只点揭开，不能把每个词都涂成高。测验 phase（retrieve/feynman）才让对方自己标，再 `gobs learn judge` 或课桌「交卷」。每个词都高但论文不是这样，不算过。判断看论文标，不看感觉。
 
    **画图页：** 细则见 `80_meta/gobs-viz/画图.md`。encode 课画「词在看谁」或「印象包被挤」、map 课画当前节点（拆/留左右同一张）。[[draw.html]] 可点词，不是主路径。仍是一课一个 phase；encode 只打 current 那 1 个组块。
 
@@ -110,8 +112,10 @@ argument-hint: "[领域名，如 Transformer 或 英语]"
 | 方式 | 何时用 |
 | --- | --- |
 | **普通 `gobs`** | 每天进库聊天（主入口） |
+| **`gobs learn desk`** | 课堂主界面：对话 + 图 + 笔记，不靠 Obsidian |
 | **`/learn`** | 已在会话里，想立刻上课 |
 | `gobs learn save` | 学习模式下「保存」：原文 + 领域卡补丁 |
+| `gobs learn judge` | 测验课对照论文标判断交卷 |
 | `gobs learn start NAME --no-launch` | 只建卡（本 skill 内部会调） |
 
 ## 禁止

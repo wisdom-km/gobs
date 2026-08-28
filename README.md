@@ -71,10 +71,12 @@ Learning is optional. The main entry is still plain `gobs`. In that session type
 
 L0 teaching is for a complete beginner: a story and one visible example, like a
 normal gobs 讲解, not a quiz. Terms come after the “remember these sentences”
-landing. Saying **保存** archives a readable lecture (not a chat log) and
-writes the current block onto the topic’s domain card (`gobs learn save`).
-Promotion to L1 happens only when you say **确认升到 L1**.
-Details: [docs/learn.zh.md](docs/learn.zh.md).
+landing. The classroom surface is `gobs learn desk` (chat + operable figure +
+notes in one page; Obsidian is not required). Saying **保存** archives a
+readable lecture (not a chat log) and writes the current block onto the topic’s
+domain card (`gobs learn save`). Promotion to L1 happens only when you say
+**确认升到 L1**.
+Details: [docs/learn.zh.md](docs/learn.zh.md) · [docs/learn-desk.md](docs/learn-desk.md).
 
 ### Save (current note)
 
@@ -114,8 +116,10 @@ gobs --new
 gobs --resume ID
 gobs --no-open
 gobs init [vault] [--skeleton] [--force-agents]
+gobs learn desk [--vault PATH] [--note CARD.md]
 gobs learn start NAME [--no-launch]
-gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file CHAT.md
+gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file LECTURE.md
+gobs learn judge --attempt ATTEMPT.json
 gobs learn status
 gobs save --note REL.md --body-file FILE [--chat-file FILE] [--title NAME]
 gobs sessions
@@ -137,6 +141,7 @@ gobs save --note 30_lessons/idea.md --body-file distilled.md --chat-file chat.md
 - [docs/usage.md](docs/usage.md) — full how-to (setup, talk, save, archive, troubleshooting)
 - [docs/usage.zh.md](docs/usage.zh.md) — 中文用法
 - [docs/learn.zh.md](docs/learn.zh.md) — L0→L1 学习模式
+- [docs/learn-desk.md](docs/learn-desk.md) — 课桌 / 图协议 / 判断
 - [docs/saving.md](docs/saving.md) — save/archive protocol
 - [docs/other-clis.md](docs/other-clis.md) — Claude Code, Codex, …
 

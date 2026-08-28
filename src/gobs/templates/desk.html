@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gobs learn desk</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --ink: #2c3338;
+    --muted: #6b7280;
+    --card: #ffffff;
+    --line: #c5cad0;
+    --query: #3d5a73;
+    --ok: #3d6b4f;
+    --bad: #b4533a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", "Source Han Sans SC",
+      "Microsoft YaHei", system-ui, sans-serif; font-size: 15px; line-height: 1.45; }
+  body { display: grid; grid-template-rows: auto 1fr auto; min-height: 100vh; }
+  header {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--card);
+  }
+  header h1 { font-size: 1.05rem; margin: 0; font-weight: 650; letter-spacing: 0.02em; }
+  header .meta { color: var(--muted); font-size: 0.85rem; }
+  header .tag {
+    display: inline-block; padding: 1px 7px; border: 1px solid var(--line);
+    color: var(--muted); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+  }
+  header .tag.test { color: var(--bad); border-color: #e4c4bc; }
+  header .tag.teach { color: var(--query); border-color: #c5d0db; }
+  .top { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+  .pane { display: flex; flex-direction: column; min-height: 0; min-width: 0;
+    border-right: 1px solid var(--line); background: var(--card); }
+  .pane:last-child { border-right: 0; }
+  .pane h2 {
+    margin: 0; padding: 8px 12px; font-size: 0.82rem; font-weight: 700;
+    letter-spacing: 0.06em; color: var(--muted); border-bottom: 1px solid var(--line);
+    text-transform: none;
+  }
+  #log {
+    flex: 1; overflow: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .bubble { max-width: 92%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line);
+    background: #f7f8fa; white-space: pre-wrap; word-break: break-word; }
+  .bubble.user { align-self: flex-end; background: #e8eef4; border-color: #c5d0db; }
+  .bubble.assistant { align-self: flex-start; }
+  .bubble .who { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); margin-bottom: 3px; }
+  .composer { display: flex; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--line); }
+  .composer textarea {
+    flex: 1; min-height: 44px; max-height: 120px; resize: vertical; font: inherit;
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: #fff;
+  }
+  button {
+    min-height: 40px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink); font: inherit; font-weight: 650;
+    padding: 7px 12px; cursor: pointer;
+  }
+  button:hover { border-color: var(--query); }
+  button.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  button:disabled { opacity: 0.45; cursor: default; }
+  #fig { flex: 1; border: 0; width: 100%; min-height: 0; background: var(--bg); }
+  .notes {
+    height: 32vh; min-height: 160px; display: flex; flex-direction: column;
+    border-top: 1px solid var(--line); background: var(--card);
+  }
+  .notes-bar { display: flex; gap: 8px; align-items: center; padding: 6px 12px;
+    border-bottom: 1px solid var(--line); }
+  .notes-bar h2 { border: 0; padding: 0; flex: 1; }
+  #notes-html { flex: 1; overflow: auto; padding: 10px 16px 20px; }
+  #notes-html h1 { font-size: 1.1rem; margin: 0.4em 0 0.3em; }
+  #notes-html h2 { font-size: 0.98rem; margin: 0.8em 0 0.3em; color: var(--ink); letter-spacing: 0; }
+  #notes-html h3 { font-size: 0.9rem; }
+  #notes-html pre { background: var(--ink); color: #f3f4f6; padding: 10px; border-radius: 6px;
+    overflow: auto; font-size: 0.82rem; }
+  #notes-html code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  #notes-html ul, #notes-html ol { padding-left: 1.3em; }
+  .toast { min-height: 1.2em; color: var(--ok); font-size: 0.82rem; font-weight: 650; }
+  .toast.bad { color: var(--bad); }
+  @media (max-width: 860px) {
+    .top { grid-template-columns: 1fr; }
+    .notes { height: 28vh; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>课桌</h1>
+    <span class="meta" id="status-line">读卡中…</span>
+    <span class="tag" id="mode-tag">—</span>
+  </header>
+  <div class="top">
+    <section class="pane" aria-label="对话">
+      <h2>对话</h2>
+      <div id="log"></div>
+      <form class="composer" id="chat-form">
+        <textarea id="chat-in" rows="2" placeholder="像终端一样说话。Enter 发送，Shift+Enter 换行"></textarea>
+        <button type="submit" class="primary" id="send">发送</button>
+      </form>
+    </section>
+    <section class="pane" aria-label="图">
+      <h2>图</h2>
+      <iframe id="fig" src="/process" title="过程图"></iframe>
+    </section>
+  </div>
+  <section class="notes" aria-label="笔记">
+    <div class="notes-bar">
+      <h2>笔记</h2>
+      <span class="toast" id="toast"></span>
+      <button type="button" id="copy-md">复制 markdown</button>
+      <button type="button" id="refresh-notes">刷新</button>
+    </div>
+    <div id="notes-html"></div>
+  </section>
+<script>
+(function () {
+  var notesMd = "";
+  function $(id) { return document.getElementById(id); }
+  function toast(msg, bad) {
+    var el = $("toast");
+    el.textContent = msg || "";
+    el.className = "toast" + (bad ? " bad" : "");
+  }
+  function addBubble(role, text) {
+    var div = document.createElement("div");
+    div.className = "bubble " + role;
+    var who = document.createElement("span");
+    who.className = "who";
+    who.textContent = role === "user" ? "你" : "教练";
+    div.appendChild(who);
+    div.appendChild(document.createTextNode(text));
+    $("log").appendChild(div);
+    $("log").scrollTop = $("log").scrollHeight;
+  }
+  function loadStatus() {
+    return fetch("/status").then(function (r) { return r.json(); }).then(function (s) {
+      var bits = [];
+      if (s.title) bits.push(s.title);
+      if (s.level) bits.push(s.level);
+      if (s.phase) bits.push("phase " + s.phase);
+      $("status-line").textContent = bits.join(" · ") || "没有领域卡";
+      var tag = $("mode-tag");
+      var teach = s.mode !== "test";
+      tag.textContent = teach ? "教课" : "测验";
+      tag.className = "tag " + (teach ? "teach" : "test");
+      document.title = (s.title || "gobs") + " · 课桌";
+    }).catch(function () {
+      $("status-line").textContent = "状态读不到";
+    });
+  }
+  function loadNotes() {
+    return fetch("/notes").then(function (r) { return r.json(); }).then(function (n) {
+      notesMd = n.markdown || "";
+      $("notes-html").innerHTML = n.html || "";
+    }).catch(function () {
+      $("notes-html").textContent = "笔记读不到。";
+    });
+  }
+  $("chat-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var box = $("chat-in");
+    var text = (box.value || "").trim();
+    if (!text) return;
+    box.value = "";
+    addBubble("user", text);
+    $("send").disabled = true;
+    fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text })
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      addBubble("assistant", j.text || j.error || "（空）");
+      loadNotes();
+    }).catch(function (e) {
+      addBubble("assistant", "这一轮没发出去：" + (e && e.message ? e.message : e));
+    }).then(function () { $("send").disabled = false; box.focus(); });
+  });
+  $("chat-in").addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" && !ev.shiftKey) {
+      ev.preventDefault();
+      $("chat-form").requestSubmit();
+    }
+  });
+  $("copy-md").addEventListener("click", function () {
+    if (!notesMd) { toast("没有可复制的笔记。", true); return; }
+    function ok() { toast("已复制 markdown。"); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(notesMd).then(ok).catch(function () { toast("复制失败。", true); });
+    } else { toast("浏览器不让复制，请手选笔记。", true); }
+  });
+  $("refresh-notes").addEventListener("click", function () { loadNotes(); loadStatus(); });
+  addBubble("assistant", "课桌开了。左边像终端说话，右边是这篇论文的图，下面是当前 phase 的笔记。");
+  loadStatus();
+  loadNotes();
+})();
+</script>
+</body>
+</html>

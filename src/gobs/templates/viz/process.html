@@ -31,6 +31,7 @@
     font-size: 16px; line-height: 1.45;
   }
   body { max-width: 960px; margin: 0 auto; padding: 20px 16px 48px; }
+  body.embed { max-width: none; padding: 10px 12px 16px; }
   h1 { font-size: 1.35rem; font-weight: 650; letter-spacing: 0.02em; margin: 4px 0 6px; }
   .sub { color: var(--muted); margin: 0 0 16px; font-size: 0.92rem; }
   .tag {
@@ -90,24 +91,27 @@
   }
   .legend { color: var(--muted); font-size: 0.82rem; margin: 6px 0 10px; }
   .toast { min-height: 1.6em; margin-top: 8px; color: var(--ok); font-weight: 650; }
+  .toast.bad { color: var(--high); }
   .preview {
     white-space: pre-wrap; background: var(--ink); color: #f3f4f6;
     border-radius: 6px; padding: 12px; font-size: 0.82rem; margin-top: 10px;
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
   .hr { height: 1px; background: var(--line); margin: 14px 0; border: 0; }
+  .src { color: var(--muted); font-size: 0.78rem; margin: 0 0 8px; }
 </style>
 </head>
 <body>
-  <h1>过程<span class="tag">示意</span></h1>
+  <h1>过程<span class="tag" id="kind-tag">示意</span></h1>
   <p class="sub">你点一步看一步。刚学按论文标高低，不能把每个词都点成高。示意，不是训练好的模型。</p>
+  <p class="src" id="source"></p>
 
-  <div class="row">
+  <div class="row" id="sentence-row">
     <input id="sentence" type="text" value="The animal didn't cross the street because it was too tired" aria-label="句子">
     <button type="button" id="apply">应用</button>
   </div>
 
-  <div class="row" role="group" aria-label="模式">
+  <div class="row" role="group" aria-label="模式" id="kind-row">
     <button type="button" class="on" id="mode-queue">没有它（排队传话）</button>
     <button type="button" id="mode-attn">有 attention</button>
   </div>
@@ -131,13 +135,33 @@
     <button type="button" class="primary" id="copy">复制到笔记</button>
     <button type="button" class="ghost" id="try">自己试</button>
     <button type="button" class="ghost" id="paper">按论文</button>
+    <button type="button" class="primary" id="submit" hidden>交卷</button>
   </div>
   <div class="toast" id="toast"></div>
   <pre class="preview" id="preview" hidden></pre>
 
 <script>
 (function () {
-  var DEFAULT = "The animal didn't cross the street because it was too tired";
+  var DEFAULT_SENTENCE = "The animal didn't cross the street because it was too tired";
+  var DEFAULT_SPEC = {
+    kind: "attention",
+    mode: "teach",
+    phase: "encode",
+    source: "Attention Is All You Need — coreference example",
+    sentence: DEFAULT_SENTENCE,
+    tokens: DEFAULT_SENTENCE.split(/\s+/),
+    query: "it",
+    paper: { animal: "hi", street: "lo", tired: "mid" },
+    reveal: [
+      { token: "animal", weight: "hi", why: "没过马路的是动物。它 = animal。" },
+      { token: "street", weight: "lo", why: "马路不会累。street 低。" },
+      { token: "tired", weight: "mid", why: "累是原因，不是「它」指的东西。" }
+    ],
+    caption: "「它」在看谁"
+  };
+
+  var spec = DEFAULT_SPEC;
+  var fromFile = false;
   var tokens = [];
   var step = 1;
   var attn = false;
@@ -146,8 +170,10 @@
   var streetI = -1;
   var tiredI = -1;
   var askI = -1;
+  var packetI = -1;
   var paperLock = true;
   var wordEls = [];
+  var teach = true;
 
   function $(id) { return document.getElementById(id); }
 
@@ -169,13 +195,21 @@
     return -1;
   }
 
+  function findToken(name) {
+    return findNamed([bare(name)]);
+  }
+
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
       return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
     });
   }
 
-  function toast(msg) { $("toast").textContent = msg || ""; }
+  function toast(msg, bad) {
+    var el = $("toast");
+    el.textContent = msg || "";
+    el.className = "toast" + (bad ? " bad" : "");
+  }
 
   function showPrev(text) {
     var el = $("preview");
@@ -226,48 +260,39 @@
     }).join("");
   }
 
-  function animalClarity(i) {
-    if (animalI < 0) return 0.15;
-    if (i < animalI) return 0.15;
-    return Math.exp(-0.55 * (i - animalI));
-  }
-
-  function packetBlurred() {
-    if (askI >= 0 && step - 1 >= askI) return true;
-    return false;
-  }
-
-  function applySentence(raw) {
-    tokens = splitWords(raw || $("sentence").value || DEFAULT);
-    if (!tokens.length) tokens = splitWords(DEFAULT);
-    animalI = findNamed(["animal"]);
-    streetI = findNamed(["street"]);
-    tiredI = findNamed(["tired"]);
-    askI = findNamed(["it", "它"]);
-    if (askI < 0) askI = tokens.length ? tokens.length - 1 : -1;
-    step = 1;
-    weights = {};
-    paperLock = canPaper();
-    render();
+  function paperTargets() {
+    var out = [];
+    var seen = {};
+    var rev = (spec && spec.reveal) || [];
+    for (var i = 0; i < rev.length; i++) {
+      var tok = rev[i].token;
+      var idx = findToken(tok);
+      if (idx < 0) continue;
+      out.push({ i: idx, w: rev[i].weight || "hi", why: rev[i].why || "", token: tok });
+      seen[bare(tok)] = true;
+    }
+    if (!out.length && spec && spec.paper) {
+      Object.keys(spec.paper).forEach(function (k) {
+        var idx = findToken(k);
+        if (idx >= 0) out.push({ i: idx, w: spec.paper[k], why: "", token: k });
+      });
+    }
+    if (!out.length) {
+      if (animalI >= 0) out.push({ i: animalI, w: "hi", why: "没过马路的是动物。它 = animal。", token: "animal" });
+      if (streetI >= 0) out.push({ i: streetI, w: "lo", why: "马路不会累。street 低。", token: "street" });
+      if (tiredI >= 0) out.push({ i: tiredI, w: "mid", why: "累是原因，不是「它」指的东西。", token: "tired" });
+    }
+    return out;
   }
 
   function canPaper() {
-    return animalI >= 0 && askI >= 0;
-  }
-
-  function paperTargets() {
-    var out = [];
-    if (animalI >= 0) out.push({ i: animalI, w: "hi", why: "没过马路的是动物。它 = animal。" });
-    if (streetI >= 0) out.push({ i: streetI, w: "lo", why: "马路不会累。street 低。" });
-    if (tiredI >= 0) out.push({ i: tiredI, w: "mid", why: "累是原因，不是「它」指的东西。" });
-    return out;
+    return paperTargets().length > 0 && askI >= 0;
   }
 
   function applyPaperReveal() {
     weights = {};
     if (!attn || !paperLock || !canPaper()) return;
     var tg = paperTargets();
-    // step 1 = 只亮问词；之后每一步揭开一个论文标
     var shown = Math.max(0, step - 1);
     tg.slice(0, shown).forEach(function (x) { weights[x.i] = x.w; });
   }
@@ -281,6 +306,74 @@
     var n = attnMax();
     if (step < 1) step = 1;
     if (step > n) step = n;
+  }
+
+  function packetClarity(i) {
+    if (packetI < 0) return 0.15;
+    if (i < packetI) return 0.15;
+    return Math.exp(-0.55 * (i - packetI));
+  }
+
+  function packetBlurred() {
+    if (askI >= 0 && step - 1 >= askI) return true;
+    return false;
+  }
+
+  function packetName() {
+    if (packetI >= 0) return tokens[packetI];
+    return "animal";
+  }
+
+  function applySentence(raw) {
+    var src = raw || (spec && spec.sentence) || $("sentence").value || DEFAULT_SENTENCE;
+    tokens = (spec && spec.tokens && spec.tokens.length && !raw)
+      ? spec.tokens.slice()
+      : splitWords(src);
+    if (!tokens.length) tokens = splitWords(DEFAULT_SENTENCE);
+    $("sentence").value = tokens.join(" ");
+    animalI = findNamed(["animal"]);
+    streetI = findNamed(["street"]);
+    tiredI = findNamed(["tired"]);
+    var q = (spec && spec.query) || "it";
+    askI = findNamed([bare(q), "it", "它"]);
+    if (askI < 0) askI = tokens.length ? tokens.length - 1 : -1;
+    packetI = animalI;
+    if (packetI < 0) {
+      var tg = paperTargets();
+      for (var i = 0; i < tg.length; i++) {
+        if (tg[i].w === "hi") { packetI = tg[i].i; break; }
+      }
+    }
+    if (packetI < 0 && tg && tg.length) packetI = tg[0].i;
+    step = 1;
+    weights = {};
+    paperLock = teach || (!fromFile);
+    if (fromFile && !teach) paperLock = false;
+    render();
+  }
+
+  function applySpec(next, loaded) {
+    spec = next || DEFAULT_SPEC;
+    fromFile = !!loaded;
+    teach = (spec.mode || "teach") !== "test";
+    var kind = spec.kind || "attention";
+    attn = kind === "attention";
+    $("kind-tag").textContent = teach ? "教课" : "测验";
+    $("source").textContent = spec.source || "";
+    $("sentence").value = spec.sentence || (spec.tokens || []).join(" ");
+    if (fromFile) {
+      $("sentence").readOnly = true;
+      $("apply").hidden = true;
+      $("kind-row").hidden = true;
+    } else {
+      $("sentence").readOnly = false;
+      $("apply").hidden = false;
+      $("kind-row").hidden = false;
+    }
+    $("submit").hidden = teach;
+    $("try").hidden = fromFile && teach;
+    $("paper").hidden = fromFile && teach;
+    applySentence(null);
   }
 
   function onWordClick(i) {
@@ -316,26 +409,32 @@
     $("mode-attn").className = attn ? "on" : "";
     var tryBtn = $("try");
     var paperBtn = $("paper");
-    if (tryBtn) tryBtn.style.display = attn ? "" : "none";
-    if (paperBtn) paperBtn.style.display = attn ? "" : "none";
+    if (tryBtn) tryBtn.style.display = (attn && !(fromFile && teach)) ? "" : "none";
+    if (paperBtn) paperBtn.style.display = (attn && !(fromFile && teach)) ? "" : "none";
     if (tryBtn) tryBtn.className = (!paperLock && attn) ? "on" : "ghost";
     if (paperBtn) paperBtn.className = (paperLock && attn) ? "on" : "ghost";
+    $("submit").hidden = teach || !attn;
 
     if (attn) {
       $("caption").innerHTML = paperCaption();
       if (paperLock && canPaper()) {
-        $("side").textContent = "刚学按论文标：animal 高，street 低，tired 中。点下一步揭开，不能改高低。";
-        $("legend").textContent = "问词是 it。示意权重，对应该句的指代，不是训练好的矩阵。";
+        $("side").textContent = "刚学按论文标。点下一步揭开，不能改高低。";
+        $("legend").textContent = "问词是 " + ((spec && spec.query) || "it") + "。示意权重，对应该句的指代，不是训练好的矩阵。";
       } else {
-        $("side").textContent = "自己试：点词循环 无 → 高 → 中 → 低 → 无。课上仍以论文标为准。";
-        $("legend").textContent = "问词是 it。自己试可以乱点；真实情况请切回「按论文」。";
+        $("side").textContent = teach
+          ? "自己试：点词循环 无 → 高 → 中 → 低 → 无。课上仍以论文标为准。"
+          : "测验：自己标高低，标完交卷。不能把每个词都涂成高（除非论文就是这样）。";
+        $("legend").textContent = teach
+          ? "问词是 " + ((spec && spec.query) || "it") + "。自己试可以乱点；真实情况请切回「按论文」。"
+          : "点词循环 无 → 高 → 中 → 低 → 无。交卷后对照论文。";
       }
     } else {
+      var name = packetName();
       var blurred = packetBlurred();
       $("caption").textContent = blurred
-        ? "到这一步，包里的 animal 已糊。"
-        : "到这一步，包里的 animal 还清楚。";
-      $("side").textContent = "印象包里的 animal：从 animal 起按距离变淡。到 it 标 糊。";
+        ? "到这一步，包里的 " + name + " 已糊。"
+        : "到这一步，包里的 " + name + " 还清楚。";
+      $("side").textContent = "印象包里的 " + name + "：从它起按距离变淡。到问词标 糊。";
       $("legend").textContent = "点词跳到那一步。左 / 右方向键也可步进。";
     }
 
@@ -370,10 +469,10 @@
           bar.classList.add("empty");
           bar.textContent = "·";
         } else {
-          var t = animalClarity(i);
+          var t = packetClarity(i);
           bar.style.background = mix("#3d5a73", "#d4d8dc", 1 - t);
           bar.style.color = t > 0.35 ? "#fff" : "#2c3338";
-          if (animalI >= 0 && i === animalI) bar.textContent = "animal";
+          if (packetI >= 0 && i === packetI) bar.textContent = tokens[packetI];
           else if (askI >= 0 && i === askI) bar.textContent = "糊";
           else bar.textContent = "";
         }
@@ -401,13 +500,14 @@
   }
 
   function paperCaption() {
+    var cap = (spec && spec.caption) || "「它」在看谁";
     if (paperLock && canPaper()) {
       var tg = paperTargets();
-      if (step <= 1) return "问词是 it。先看它在说谁。";
+      if (step <= 1) return "问词是 " + ((spec && spec.query) || "it") + "。先看它在说谁。";
       var x = tg[step - 2];
-      if (x) return x.why + attnWhoLine();
+      if (x) return (x.why || cap) + attnWhoLine();
     }
-    return "「它」在看谁" + attnWhoLine();
+    return cap + attnWhoLine();
   }
 
   function drawArcs() {
@@ -457,12 +557,21 @@
     });
   }
 
+  function currentWeightsByToken() {
+    var out = {};
+    Object.keys(weights).forEach(function (k) {
+      var i = Number(k);
+      if (tokens[i]) out[tokens[i]] = weights[k];
+    });
+    return out;
+  }
+
   function exportNote() {
     var n = tokens.length;
     if (!n) { toast("先写一句。"); return; }
     var text = "## 双编码\n\n";
     if (attn) {
-      var src = askI >= 0 ? tokens[askI] : "it";
+      var src = askI >= 0 ? tokens[askI] : ((spec && spec.query) || "it");
       var lines = ["flowchart LR", "  src[\"" + src + "\"]"];
       var hi = [], mid = [], lo = [];
       var k = 0;
@@ -482,7 +591,7 @@
           lo.push(w);
         }
       });
-      text += "有 attention。第 " + step + " / " + n + " 步。「它」在看谁。\n\n";
+      text += "有 attention。第 " + step + " / " + n + " 步。" + ((spec && spec.caption) || "「它」在看谁") + "。\n\n";
       if (!hi.length && !lo.length) {
         text += "还没点权。问词是 " + src + "。\n";
       } else {
@@ -491,7 +600,7 @@
         if (mid.length) text += "中：" + mid.join("、") + "。\n";
         if (lo.length) text += "低：" + lo.join("、") + "。\n";
       }
-      text += "\n只要记住：it 一次看全句，权重大的先算。示意，不是训练好的模型。\n";
+      text += "\n只要记住：问词一次看全句，权重大的先算。示意，不是训练好的模型。\n";
     } else {
       var play = step - 1;
       var chain = tokens.map(function (w, i) {
@@ -499,9 +608,10 @@
       }).join(" -> ");
       var ascii = tokens.join(" ");
       var blurred = packetBlurred();
+      var name = packetName();
       text += "没有它（排队传话）第 " + step + " / " + n + " 步。\n\n";
       text += chain + "\n\n";
-      text += (blurred ? "到这一步，包里的 animal 已糊。" : "到这一步，包里的 animal 还清楚。") + "\n\n";
+      text += (blurred ? "到这一步，包里的 " + name + " 已糊。" : "到这一步，包里的 " + name + " 还清楚。") + "\n\n";
       var mer = ["flowchart LR"];
       tokens.forEach(function (w, i) {
         mer.push("  t" + i + "[\"" + w + "\"]");
@@ -510,23 +620,59 @@
       });
       text += "```mermaid\n" + mer.join("\n") + "\n```\n\n";
       text += "ASCII：" + ascii + "\n";
-      text += "只要记住：排队传到 it 时，包里的 animal 已经被挤糊。\n";
+      text += "只要记住：排队传到问词时，包里的 " + name + " 已经被挤糊。\n";
     }
     copyText(text);
   }
 
+  function submitAttempt() {
+    var payload = { weights: currentWeightsByToken() };
+    fetch("/judge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      toast(j.verdict || (j.ok ? "通过。" : "未过。"), !j.ok);
+    }).catch(function () {
+      toast("课桌不在。终端跑：gobs learn judge --attempt attempt.json", true);
+      showPrev(JSON.stringify(payload, null, 2));
+    });
+  }
+
+  function loadFigure() {
+    var tries = ["/figure", "figure.json"];
+    function next(i) {
+      if (i >= tries.length) {
+        applySpec(DEFAULT_SPEC, false);
+        return;
+      }
+      fetch(tries[i], { cache: "no-store" }).then(function (r) {
+        if (!r.ok) throw new Error("no");
+        return r.json();
+      }).then(function (j) {
+        if (!j || !j.kind && !j.tokens && !j.sentence) throw new Error("empty");
+        applySpec(j, true);
+      }).catch(function () { next(i + 1); });
+    }
+    next(0);
+  }
+
   $("apply").addEventListener("click", function () {
+    if (fromFile) return;
+    spec = Object.assign({}, spec, { sentence: $("sentence").value, tokens: splitWords($("sentence").value) });
     applySentence($("sentence").value);
     toast("");
   });
   $("prev").addEventListener("click", function () { step -= 1; render(); });
   $("next").addEventListener("click", function () { step += 1; render(); });
   $("mode-queue").addEventListener("click", function () {
+    if (fromFile) return;
     attn = false;
     step = 1;
     render();
   });
   $("mode-attn").addEventListener("click", function () {
+    if (fromFile) return;
     attn = true;
     paperLock = canPaper() ? true : false;
     step = 1;
@@ -535,6 +681,7 @@
   });
   $("copy").addEventListener("click", exportNote);
   $("try").addEventListener("click", function () {
+    if (fromFile && teach) return;
     paperLock = false;
     toast("自己试。课上仍以论文标为准。");
     render();
@@ -546,6 +693,7 @@
     toast("已按论文重标。");
     render();
   });
+  $("submit").addEventListener("click", submitAttempt);
 
   document.addEventListener("keydown", function (ev) {
     var tag = (ev.target && ev.target.tagName) || "";
@@ -554,8 +702,10 @@
     if (ev.key === "ArrowRight") { ev.preventDefault(); step += 1; render(); }
   });
   window.addEventListener("resize", drawArcs);
+  if (window.parent !== window) document.body.classList.add("embed");
 
-  applySentence(DEFAULT);
+  applySpec(DEFAULT_SPEC, false);
+  loadFigure();
 })();
 </script>
 </body>

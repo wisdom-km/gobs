@@ -1,0 +1,16 @@
+{
+  "kind": "attention",
+  "mode": "teach",
+  "phase": "encode",
+  "source": "Attention Is All You Need — coreference example (The animal did not cross the street because it was too tired)",
+  "sentence": "The animal didn't cross the street because it was too tired",
+  "tokens": ["The", "animal", "didn't", "cross", "the", "street", "because", "it", "was", "too", "tired"],
+  "query": "it",
+  "paper": {"animal": "hi", "street": "lo", "tired": "mid"},
+  "reveal": [
+    {"token": "animal", "weight": "hi", "why": "没过马路的是动物。它 = animal。"},
+    {"token": "street", "weight": "lo", "why": "马路不会累。street 低。"},
+    {"token": "tired", "weight": "mid", "why": "累是原因，不是「它」指的东西。"}
+  ],
+  "caption": "「它」在看谁"
+}

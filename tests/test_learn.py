@@ -159,6 +159,7 @@ class LearnTests(unittest.TestCase):
             self.assertTrue((vault / "80_meta" / "gobs-viz" / "画图.md").is_file())
             self.assertTrue((vault / "80_meta" / "gobs-viz" / "draw.py").is_file())
             self.assertTrue((vault / "80_meta" / "gobs-viz" / "process.html").is_file())
+            self.assertTrue((vault / "80_meta" / "gobs-viz" / "figure.json").is_file())
             viz_html = (vault / "80_meta" / "gobs-viz" / "draw.html").read_text(encoding="utf-8")
             self.assertIn("看谁", viz_html)
             self.assertIn("印象包", viz_html)
@@ -707,6 +708,191 @@ class LearnTests(unittest.TestCase):
                     )
             self.assertIn("must not touch", str(ctx.exception))
             self.assertIn("四列表", str(ctx.exception))
+
+    def test_figure_schema_load(self) -> None:
+        from gobs.figure import (
+            FigureError,
+            default_figure,
+            load_figure,
+            packaged_figure,
+            validate_figure,
+        )
+
+        spec = default_figure()
+        got = validate_figure(spec)
+        self.assertEqual(got["kind"], "attention")
+        self.assertEqual(got["paper"]["animal"], "hi")
+        self.assertEqual(got["paper"]["street"], "lo")
+        self.assertEqual(got["paper"]["tired"], "mid")
+        self.assertEqual(len(got["tokens"]), 11)
+        packed = packaged_figure()
+        self.assertEqual(packed["query"], "it")
+        self.assertEqual(packed["caption"], "「它」在看谁")
+        path = Path(__file__).resolve().parents[1] / "src" / "gobs" / "templates" / "viz" / "figure.json"
+        loaded = load_figure(path)
+        self.assertEqual(loaded["kind"], "attention")
+        self.assertIn("animal", loaded["paper"])
+        with self.assertRaises(FigureError):
+            validate_figure({"kind": "nope", "tokens": ["a"]})
+        with self.assertRaises(FigureError):
+            validate_figure({"kind": "attention", "sentence": ""})
+
+    def test_judge_paper_match_and_all_high(self) -> None:
+        from gobs.figure import default_figure, judge
+
+        spec = default_figure()
+        ok = judge(spec, {"weights": {"animal": "hi", "street": "lo", "tired": "mid"}})
+        self.assertTrue(ok.ok, ok.verdict)
+        self.assertEqual(ok.code, 0)
+        self.assertIn("通过", ok.verdict)
+        same = judge(
+            spec["paper"],
+            {"animal": "hi", "street": "lo", "tired": "mid"},
+            reveal=spec["reveal"],
+            tokens=spec["tokens"],
+        )
+        self.assertTrue(same.ok, same.verdict)
+        all_high = judge(
+            spec,
+            {"weights": {t: "hi" for t in spec["tokens"]}},
+        )
+        self.assertFalse(all_high.ok)
+        self.assertEqual(all_high.code, 1)
+        self.assertIn("未过", all_high.verdict)
+        self.assertTrue("高" in all_high.verdict or "street" in all_high.verdict)
+        extra = judge(spec, {"weights": {"animal": "hi", "street": "lo", "tired": "mid", "The": "hi"}})
+        self.assertFalse(extra.ok)
+        self.assertIn("The", extra.verdict)
+
+    def test_learn_desk_help(self) -> None:
+        with self.assertRaises(SystemExit) as ctx:
+            main(["learn", "desk", "--help"])
+        self.assertEqual(ctx.exception.code, 0)
+        with self.assertRaises(SystemExit) as ctx2:
+            main(["learn", "judge", "--help"])
+        self.assertEqual(ctx2.exception.code, 0)
+
+    def test_learn_judge_cli(self) -> None:
+        import json
+
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            vault = tmp / "vault"
+            vault.mkdir()
+            cfg = tmp / "home" / "config.toml"
+            attempt_ok = tmp / "ok.json"
+            attempt_hi = tmp / "allhigh.json"
+            with patch("gobs.config.user_config_path", lambda: cfg):
+                main(["init", str(vault), "--no-default"])
+                figure = vault / "80_meta" / "gobs-viz" / "figure.json"
+                self.assertTrue(figure.is_file())
+                spec = json.loads(figure.read_text(encoding="utf-8"))
+                attempt_ok.write_text(
+                    json.dumps({"weights": {"animal": "hi", "street": "lo", "tired": "mid"}}),
+                    encoding="utf-8",
+                )
+                attempt_hi.write_text(
+                    json.dumps({"weights": {t: "hi" for t in spec["tokens"]}}),
+                    encoding="utf-8",
+                )
+                code_ok = main(
+                    [
+                        "learn",
+                        "judge",
+                        "--vault",
+                        str(vault),
+                        "--attempt",
+                        str(attempt_ok),
+                    ]
+                )
+                code_hi = main(
+                    [
+                        "learn",
+                        "judge",
+                        "--vault",
+                        str(vault),
+                        "--attempt",
+                        str(attempt_hi),
+                    ]
+                )
+            self.assertEqual(code_ok, 0)
+            self.assertEqual(code_hi, 1)
+
+    def test_desk_wsgi_status_figure_judge(self) -> None:
+        import json
+        from io import BytesIO
+
+        from gobs.desk import DeskApp
+
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            vault = self._vault(tmp)
+            rel, _ = create_domain(vault, "Transformer")
+            text = (vault / rel).read_text(encoding="utf-8")
+            text = text.replace("phase: enough", "phase: retrieve")
+            (vault / rel).write_text(text, encoding="utf-8")
+            app = DeskApp(vault, note=rel.as_posix())
+
+            def call(method: str, path: str, body: dict | None = None):
+                raw_b = json.dumps(body or {}).encode("utf-8") if body is not None else b""
+                env = {
+                    "REQUEST_METHOD": method,
+                    "PATH_INFO": path,
+                    "CONTENT_LENGTH": str(len(raw_b)),
+                    "wsgi.input": BytesIO(raw_b),
+                }
+                got = {}
+
+                def start(status, headers):
+                    got["status"] = status
+                    got["headers"] = dict(headers)
+
+                chunks = app(env, start)
+                return got["status"], b"".join(chunks)
+
+            st, body = call("GET", "/status")
+            self.assertTrue(st.startswith("200"))
+            status = json.loads(body)
+            self.assertEqual(status["mode"], "test")
+            self.assertEqual(status["phase"], "retrieve")
+            self.assertEqual(status["title"], "Transformer")
+            st, body = call("GET", "/figure")
+            self.assertTrue(st.startswith("200"))
+            fig = json.loads(body)
+            self.assertEqual(fig["kind"], "attention")
+            self.assertEqual(fig["mode"], "test")
+            self.assertEqual(fig["paper"]["animal"], "hi")
+            st, body = call(
+                "POST",
+                "/judge",
+                {"weights": {"animal": "hi", "street": "lo", "tired": "mid"}},
+            )
+            self.assertTrue(st.startswith("200"))
+            verdict = json.loads(body)
+            self.assertTrue(verdict["ok"], verdict)
+            st, body = call(
+                "POST",
+                "/judge",
+                {"weights": {t: "hi" for t in fig["tokens"]}},
+            )
+            self.assertTrue(st.startswith("200"))
+            fail = json.loads(body)
+            self.assertFalse(fail["ok"])
+            st, page = call("GET", "/")
+            self.assertTrue(st.startswith("200"))
+            self.assertIn("对话".encode("utf-8"), page)
+            st, notes = call("GET", "/notes")
+            self.assertTrue(st.startswith("200"))
+            payload = json.loads(notes)
+            self.assertIn("markdown", payload)
+            self.assertIn("html", payload)
+            with patch("gobs.desk.run_cli_turn", return_value=("本地回了一句。", "local")):
+                st, chat = call("POST", "/chat", {"text": "ping"})
+            self.assertTrue(st.startswith("200"))
+            reply = json.loads(chat)
+            self.assertIn("本地回了一句", reply["text"])
+            self.assertTrue(any((vault / "90_archive" / "transcripts").glob("desk-*.md")))
+
 
 
 if __name__ == "__main__":

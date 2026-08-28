@@ -11,7 +11,7 @@
 
 phase 顺序：enough（定界）→ map（领域地图）→ principles（第一性原理，本课最多新上 4 条，卡上总额 3–7）→ encode（当前组块里标 current 的那 1 个；人话+图+类比+反例 = 四路编码）→ retrieve（提取队列）→ feynman（费曼对打）→ artifact（最小产物）→ review（known / unknown / next_move）。
 
-L0 对零基础讲。有论文用原文词+语境人话，不要另造正名。论文第一课只吃摘要+引言。过程课必须有能看见的图：过程课优先打开 `80_meta/gobs-viz/process.html` 让对方自己点下一步。静态对照仍可用 draw.py / Mermaid；库图没好再用 ASCII 兜底。排队要把「糊」画进图。禁止图像生成绘本。讲完先问哪步不懂，补上再课间确认（细则见 `/learn` skill）。L1 只在旧图上贴名字。
+L0 对零基础讲。有论文用原文词+语境人话，不要另造正名。论文第一课只吃摘要+引言。过程课必须有能看见的图：课堂优先 `gobs learn desk`（对话+图+笔记，不靠 Obsidian）；没有 desk 再打开 `80_meta/gobs-viz/process.html` 让对方自己点下一步。图按本课论文的例子写 `80_meta/gobs-viz/figure.json`，不要套死小猫句。教课给出论文标、对方只揭开；测验课（retrieve/feynman）自己标再 `gobs learn judge` / 交卷。每个词都高但论文不是这样，不算过。静态对照仍可用 draw.py / Mermaid；库图没好再用 ASCII 兜底。排队要把「糊」画进图。禁止图像生成绘本。讲完先问哪步不懂，补上再课间确认（细则见 `/learn` skill）。L1 只在旧图上贴名字。
 
 零基础未画先禁：配件、零件、有关。配件 vs 整台必须先画拆/留左右对照（同一张图）；拆和留是同一节点，不要把右边推到下一课。attention 说成找这个字在说谁。讲完问哪里没听懂。听懂了/可以了只收当前 phase，不要自动开下一课。禁止对学生说最空、这课行。
 
@@ -29,9 +29,11 @@ encode / map 课优先跑 `80_meta/gobs-viz/draw.py` 或看 `80_meta/gobs-viz/�
 
 ### CLI（可选，不是主路径）
 
+- `gobs learn desk`：课堂主界面（对话 + 图 + 笔记），不启动 Obsidian
 - `gobs learn start NAME`：终端一键建卡 + 启动/续 session
 - `gobs learn start NAME --no-launch`：只建卡（`/learn` skill 内部会调）
 - `gobs learn save --note 卡片路径.md --body-file CARD.md --chat-file LECTURE.md`
+- `gobs learn judge --attempt ATTEMPT.json`：测验课对照论文标判断
 - `gobs learn status`：看档位、phase、next_review、artifact 与 session_id
 
 ### 档位

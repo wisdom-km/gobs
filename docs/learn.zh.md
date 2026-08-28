@@ -2,8 +2,10 @@
 
 ## 推荐用法（先普通 gobs，再切 /learn）
 
+课堂主界面是 `gobs learn desk`：对话、图、笔记同一页，不启动 Obsidian。图按本课论文写 `80_meta/gobs-viz/figure.json`。教课锁论文标；测验课自己标再 `gobs learn judge`。详见 [learn-desk.md](learn-desk.md)。
+
 1. 照常 `gobs` 进任意会话（新的或续旧的都行）。这是主入口。
-2. 想上课时在对话里输入：
+2. 想上课时优先 `gobs learn desk --vault …`，或在对话里输入：
 
 ```text
 /learn
@@ -33,6 +35,8 @@ gobs learn start Transformer --resume SESSION_ID
 gobs learn start Transformer --new
 gobs learn save --note 22_study/00_learn/Transformer.md --body-file CARD.md --chat-file LECTURE.md
 gobs learn status
+gobs learn desk --vault /path/to/vault
+gobs learn judge --attempt attempt.json
 ```
 
 ## 三条桥（与旧 gobs）

@@ -102,14 +102,17 @@ class InitTests(unittest.TestCase):
             note = vault / "80_meta" / "gobs-viz" / "画图.md"
             helper = vault / "80_meta" / "gobs-viz" / "draw.py"
             process = vault / "80_meta" / "gobs-viz" / "process.html"
+            figure = vault / "80_meta" / "gobs-viz" / "figure.json"
             self.assertTrue(html.is_file())
             self.assertTrue(note.is_file())
             self.assertTrue(helper.is_file())
             self.assertTrue(process.is_file())
+            self.assertTrue(figure.is_file())
             self.assertEqual(actions["80_meta/gobs-viz/draw.html"], "created")
             self.assertEqual(actions["80_meta/gobs-viz/画图.md"], "created")
             self.assertEqual(actions["80_meta/gobs-viz/draw.py"], "created")
             self.assertEqual(actions["80_meta/gobs-viz/process.html"], "created")
+            self.assertEqual(actions["80_meta/gobs-viz/figure.json"], "created")
             html_text = html.read_text(encoding="utf-8")
             note_text = note.read_text(encoding="utf-8")
             self.assertIn("看谁", html_text)
@@ -117,6 +120,9 @@ class InitTests(unittest.TestCase):
             self.assertIn("地图", html_text)
             self.assertIn("复制到笔记", html_text)
             self.assertIn("The animal didn't cross the street because it was too tired", html_text)
+            fig_text = figure.read_text(encoding="utf-8")
+            self.assertIn('"kind": "attention"', fig_text)
+            self.assertIn('"animal"', fig_text)
             self.assertIn("麻烦", html_text)
             self.assertIn("老办法", html_text)
             self.assertIn("只要它", html_text)
@@ -134,6 +140,7 @@ class InitTests(unittest.TestCase):
             self.assertEqual(again["80_meta/gobs-viz/draw.html"], "updated")
             self.assertEqual(again["80_meta/gobs-viz/draw.py"], "updated")
             self.assertEqual(again["80_meta/gobs-viz/process.html"], "updated")
+            self.assertEqual(again["80_meta/gobs-viz/figure.json"], "updated")
 
     def test_draw_py_seq_vs_attn_writes_png(self) -> None:
         try:

@@ -49,7 +49,7 @@ gobs sessions
 ```
 
 在 Grok 里对着库聊、一起读讲解、改现行页，都是普通对话。**保存是另说一句。**
-想上课时在同一会话里输入 `/learn`（不必退出）。学习模式下说 **保存**：原文进归档，同时写进该主题的领域卡。
+想上课时优先 `gobs learn desk`（对话+图+笔记，不靠 Obsidian），或在同一会话里输入 `/learn`。学习模式下说 **保存**：原文进归档，同时写进该主题的领域卡。细则：[docs/learn-desk.md](docs/learn-desk.md)。
 
 ### 保存（精华）
 
@@ -82,7 +82,9 @@ gobs --new
 gobs --resume ID
 gobs init [vault] [--skeleton] [--force-agents]
 gobs save --note 相对路径.md --body-file FILE [--chat-file FILE] [--title NAME]
-gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file CHAT.md
+gobs learn desk [--vault PATH]
+gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file LECTURE.md
+gobs learn judge --attempt ATTEMPT.json
 gobs sessions
 gobs doctor
 gobs config vault PATH

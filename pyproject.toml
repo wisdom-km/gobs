@@ -35,4 +35,4 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-gobs = ["templates/*.md", "templates/skills/*/SKILL.md", "templates/viz/*", "templates/viz/examples/*"]
+gobs = ["templates/*.md", "templates/*.html", "templates/skills/*/SKILL.md", "templates/viz/*", "templates/viz/examples/*"]

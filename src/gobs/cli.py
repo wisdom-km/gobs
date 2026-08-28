@@ -11,6 +11,7 @@ from gobs.config import load_user_config, write_user_config
 from gobs.doctor import doctor
 from gobs.init_cmd import init_vault
 from gobs.launch import LaunchError, launch
+from gobs.figure import FigureError
 from gobs.learn import (
     LearnError,
     bind_session,
@@ -123,6 +124,22 @@ def _parser() -> argparse.ArgumentParser:
     )
     learn_save.add_argument("--title", help="Short title used in the transcript filename")
     learn_save.add_argument("--vault", help="Vault path")
+    judge_p = learn_sub.add_parser(
+        "judge",
+        help="Compare a student figure attempt to the paper spec",
+    )
+    judge_p.add_argument("--note", help="Domain card (vault-relative); locates the vault figure")
+    judge_p.add_argument("--attempt", help="Student attempt JSON (weights)")
+    judge_p.add_argument("--vault", help="Vault path")
+    judge_p.add_argument("--figure", help="figure.json path (default: 80_meta/gobs-viz/figure.json)")
+    desk_p = learn_sub.add_parser(
+        "desk",
+        help="Open the local learn desk (chat + figure + notes). Does not launch Obsidian.",
+    )
+    desk_p.add_argument("--vault", help="Vault path")
+    desk_p.add_argument("--port", type=int, default=8765, help="Local port (default 8765)")
+    desk_p.add_argument("--note", help="Domain card path (vault-relative)")
+    desk_p.add_argument("--no-open", action="store_true", help="Do not open the browser")
     return p
 
 
@@ -245,6 +262,36 @@ def _cmd_learn_save(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_learn_judge(ns: argparse.Namespace) -> int:
+    from gobs.figure import figure_path, judge_files, load_figure, load_figure_for_vault
+
+    vault = resolve_learn_vault(Path(ns.vault) if ns.vault else None)
+    if ns.figure:
+        spec = load_figure(Path(ns.figure))
+    else:
+        spec = load_figure_for_vault(vault)
+    attempt = Path(ns.attempt) if ns.attempt else None
+    if attempt is None:
+        sibling = figure_path(vault).with_name("attempt.json")
+        if sibling.is_file():
+            attempt = sibling
+    result = judge_files(figure=spec, attempt=attempt)
+    print(result.verdict)
+    return result.code
+
+
+def _cmd_learn_desk(ns: argparse.Namespace) -> int:
+    from gobs.desk import serve_desk
+
+    vault = resolve_learn_vault(Path(ns.vault) if ns.vault else None)
+    return serve_desk(
+        vault,
+        port=ns.port,
+        note=ns.note,
+        open_browser=not ns.no_open,
+    )
+
+
 def _cmd_learn(ns: argparse.Namespace) -> int:
     if ns.learn_cmd == "status":
         vault = resolve_learn_vault(Path(ns.vault) if ns.vault else None)
@@ -252,10 +299,15 @@ def _cmd_learn(ns: argparse.Namespace) -> int:
         return 0
     if ns.learn_cmd == "save":
         return _cmd_learn_save(ns)
+    if ns.learn_cmd == "judge":
+        return _cmd_learn_judge(ns)
+    if ns.learn_cmd == "desk":
+        return _cmd_learn_desk(ns)
     if ns.learn_cmd != "start":
         print(
             "usage: gobs learn start <名称> | gobs learn status | "
-            "gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file LECTURE.md",
+            "gobs learn save --note 22_study/00_learn/NAME.md --body-file CARD.md --chat-file LECTURE.md | "
+            "gobs learn judge [--attempt FILE] | gobs learn desk [--vault PATH]",
             file=sys.stderr,
         )
         return 2
@@ -350,6 +402,6 @@ def main(argv: list[str] | None = None) -> int:
             new_session=ns.new,
             resume_id=ns.resume,
         )
-    except (LaunchError, FileNotFoundError, SaveError, LearnError) as exc:
+    except (LaunchError, FileNotFoundError, SaveError, LearnError, FigureError) as exc:
         print(f"gobs: {exc}", file=sys.stderr)
         return 1
