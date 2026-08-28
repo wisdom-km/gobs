@@ -59,6 +59,7 @@ def launch(
     cli: str | None = None,
     open_obsidian: bool | None = None,
     extra_args: list[str] | None = None,
+    extra_env: dict[str, str] | None = None,
     wait: bool = True,
     new_session: bool = False,
     resume_id: str | None = None,
@@ -112,6 +113,8 @@ def launch(
     env["GOBS"] = "1"
     env["GOBS_VAULT"] = str(vault_path)
     env["GOBS_CLI"] = cli_name
+    if extra_env:
+        env.update(extra_env)
     argv = [command, "--cwd", str(vault_path)] if cli_name == "grok" else [command]
     if picked and cli_name == "grok":
         argv.extend(["--resume", picked])

@@ -2,10 +2,17 @@
 
 **gobs** launches an AI CLI against **your own [Obsidian](https://obsidian.md) vault**.
 
+It is a thin Obsidian bridge: open the vault, start Grok, save an explainer or
+translation when you ask. Paper work is ordinary notes (`讲解`, bilingual md).
+gobs does **not** keep task cards, domain cards, or a lesson tracker in the vault.
+
 You read. The model writes and files — **only when you ask**, and only through
 `gobs save`. The chat itself is never dumped into a current note.
 
 Default CLI: [Grok](https://x.ai). gobs is a launcher, not a new chat UI.
+
+Coaching / L0→L1 lessons live in a separate app:
+[gobs-learn](https://github.com/wisdom-km/gobs-learn).
 
 **How to use (full walkthrough):** [docs/usage.md](docs/usage.md) ·
 [中文](docs/usage.zh.md)

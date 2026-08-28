@@ -2,9 +2,13 @@
 
 **gobs** 在终端里启动一个 AI CLI，用来管**你自己的 [Obsidian](https://obsidian.md) 库**。
 
+它只做薄连接：打开库、启动 Grok、你说保存时把讲解或译文落盘。论文工作就是普通笔记（讲解、中英对照）。gobs **不**在库里建任务卡、领域卡、上课进度。
+
 人看。模型写和归档——**只有你说保存**才落盘，而且必须走 `gobs save`，不能把聊天贴进现行页。
 
 gobs 是启动器，聊天窗仍是 Grok。
+
+上课（L0→L1）在独立应用：[gobs-learn](https://github.com/wisdom-km/gobs-learn)。
 
 **完整用法：** [docs/usage.zh.md](docs/usage.zh.md) · [English](docs/usage.md)
 

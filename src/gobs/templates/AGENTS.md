@@ -16,6 +16,7 @@ session started from `gobs`.
 ## What to write
 
 - Distilled notes: conclusions, decisions, follow-ups. Not a transcript.
+- Paper work is an explainer or translation page, not a task/progress card.
 - Prefer editing an existing page over opening a same-topic duplicate. Search first.
 - Match the vault's existing note style (frontmatter, heading level, language).
 - If this vault has a home note (`README.md` or similar), only change it when
@@ -60,6 +61,7 @@ one or two concrete paths — never "please pick a folder from the tree".
 ## Do not
 
 - Restructure the folder skeleton unless the human asked.
+- Create task cards, domain cards, or lesson trackers. This vault is notes.
 - Put secrets in notes.
 - Treat archived transcripts as daily reading.
 - Start a large software project here. Small edits are fine; send real
