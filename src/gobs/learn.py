@@ -284,7 +284,7 @@ def _section_has_content(text: str) -> bool:
         s = line.strip()
         if not s or s.startswith("（") or s.startswith("("):
             continue
-        if s in {"门 = 地图节点。最多 5 个。`open_door` 指向当前节点。"}:
+        if s.startswith("门 = 地图节点。最多 5 个。"):
             continue
         if re.match(r"^[-*]\s+\S", s) or re.match(r"^\d+\.\s+\S", s):
             rest = re.sub(r"^[-*\d.]+\s+", "", s).strip().rstrip("：:")
@@ -709,7 +709,7 @@ def boot_prompt(
         "有论文/原文：概念用原文的词，旁边跟一句这个语境的人话；不要另造正名。"
         "过程课必须 ASCII 画出「有它 / 没有它」；排队课要把印象包被挤画出来，不能只画箭头。定界、判断不要硬画。"
         "encode / map 课可打开 80_meta/gobs-viz/画图.md 画「看谁」或印象包，再贴回卡。"
-        "论文第一课只吃摘要+引言。配件 vs 整台写进只要记住。"
+        "论文第一课只吃摘要+引言。配件 vs 整台必须先画排队的人+脸上的眼镜（左贴右拆），未画禁甩配件/零件/有关。attention 说成眼镜找这个字在说谁。「这课行」只收当前 phase。"
         "讲完先停：2～3 个图上能指的卡住点，补上再课间确认。不要问 LLM。"
         "L1 只在旧图上贴名字，禁止换故事。"
     )

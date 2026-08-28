@@ -194,6 +194,9 @@ class LearnTests(unittest.TestCase):
             self.assertIn("聊天 log", learn_text)
             self.assertIn("章节补丁", learn_text)
             self.assertIn("最多新上 4 条", learn_text)
+            self.assertIn("这个字在说谁", learn_text)
+            self.assertIn("这课行", learn_text)
+            self.assertIn("配件、零件、有关", learn_text)
             domain = vault / ".grok" / "skills" / "learn-domain" / "SKILL.md"
             self.assertTrue(domain.is_file())
             save_skill = vault / ".grok" / "skills" / "save-to-vault" / "SKILL.md"
@@ -216,6 +219,8 @@ class LearnTests(unittest.TestCase):
         self.assertIn("先提取", text)
         self.assertIn("补丁", text)
         self.assertIn("80_meta/gobs-viz", text)
+        self.assertIn("这个字在说谁", text)
+        self.assertIn("这课行", text)
         self.assertNotIn("不要讲课", text)
         self.assertNotIn("要准", text)
         self.assertNotIn("一次新零件不超过 3 个", text)
